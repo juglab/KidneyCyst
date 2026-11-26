@@ -1,0 +1,48 @@
+KidneyCyst — copy handoff and release checks
+
+The revised UI_TEXT.md preserves all 349 keyed entries and every placeholder name and occurrence. 227 entries were rewritten. The source file in Downloads was not changed. This is a copy revision, not an implementation or scientific audit.
+
+Editorial conventions
+- Review state: Unreviewed / Reviewed.
+- Review decision: Outline accepted / Outline corrected / No kidney visible / Cannot assess.
+- Area source: Model / Reviewed.
+- Outline describes the visible boundary; mask describes the region edited with brush or lasso.
+- Detection generates candidate kidney outlines. This release does not detect individual cysts.
+- Errors identify the failure and a recovery action. Contact references use the support email rather than a first name.
+- Timing estimates are shown dynamically where available. Unsupported fixed speed promises were removed.
+
+Resolve before public release
+
+1. Network behavior
+The supplied file says there are no model downloads or update checks. Earlier project information said there were model downloads or update checks. The rewrite retains the file's implementation description provisionally. Check the actual installer, startup and optional integrations before publishing any privacy statement. A loopback interface alone does not prove that no data leaves the computer.
+
+2. Licensing
+MIT is proposed, not approved. Do not display an active MIT license until the relevant rights holders agree. Audit the exact installed dependency versions, bundled binaries, model weights and example-data terms. Verify THIRD_PARTY_NOTICES.txt exists and contains the required notices. Optional installation does not, by itself, resolve license compatibility. The paquo, JPype and QuPath license identifiers in the source were retained as supplied, not independently audited.
+
+3. Calibration and area adjustment
+The assumed 1.19595 µm/pixel calibration needs confirmation or a user correction path. Copy cannot make an assumed physical area reliable. Document the source and validation of the division by 1.02; it is an empirical correction, not a universal conversion between polygon and raster areas. The rewrite removes the guarantee that the measurements match QuPath exactly.
+
+4. Validation
+Verify all technical values against the model records. Explain why training data total 686 images but the area evaluation uses n = 685. State how the median baseline was derived and whether it used only the relevant training folds. Distinguish held-out single-model cross-validation results from performance of the deployed three-model ensemble. Define 'Cysts only' as an evaluation subgroup if applicable; do not imply individual cyst detection. Scientific numbers and the validation table were not altered.
+
+5. Saving and error states
+Only claim that tables and reports are up to date after writes succeed. The review-complete message may be false when Excel locks results.xlsx. Use a separate export-pending state when appropriate. Verify retry behavior and whether a failed save can be retried without losing edits.
+
+6. Rerun behavior
+The home confirmation says results are archived in replaced_…; err.rerun says they may be overwritten. Determine which behavior applies and reconcile the messages. Never promise preservation unless the archive step succeeds.
+
+7. Runtime branches and placeholders
+Several keyed entries are templates rather than single finished strings: rep.n.median, log.image, device variants, calibration-source variants and [if QuPath is missing:]. Implement conditional branches so slash-separated alternatives and editorial notes never appear literally.
+log.done uses {n} for both total images and flagged images; log.image repeats {n} for total count, duration and region count; help.about.versions repeats {v} for three different packages. These need separate runtime variables. They were preserved to avoid breaking the supplied mapping.
+
+8. Export compatibility
+Display changes include 'Area from' → 'Area source', 'Decision' → 'Review decision', 'checked' → 'reviewed', and 'outline right' → 'outline accepted'. If scripts parse exported headings or values, use stable internal identifiers or version the export schema. Do not blindly replace stored enum values with display copy.
+
+9. Interaction semantics
+Confirm that Save & next advances only after saving; that Cannot assess excludes area from summaries while retaining the audit record; and that Skip preserves existing review status. 'Fill opacity' assumes a slider. If the control is a visibility toggle, use 'Show fill'. Disable Fit outline when no outline exists, or define its fallback. Verify shortcuts against the actual Windows and macOS bindings.
+
+10. Attribution and release metadata
+The software citation and contributor roles remain provisional. Confirm author order, institutional names, funding wording and each contributor's role before publishing. Verify the citation for the actual nnU-Net version/method used. AI-assisted creation credits do not specify artwork reuse terms; add the actual terms. Remove pending-approval wording only after those decisions are resolved.
+
+Scope
+No application source was available. Layout, accessibility behavior, keyboard bindings, calculation correctness and installer behavior have not been tested. This handoff improves production copy; it does not certify release readiness.

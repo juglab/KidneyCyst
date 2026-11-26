@@ -1,0 +1,281 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KidneyCyst</title><link rel="icon" href="/static/favicon.png"><link rel="stylesheet" href="/static/style.css"></head>
+<body><main class="runpage">
+<nav class="crumb"><a href="#" id="back"><span class="ic" style="--i:url(/static/icons/cyst-marker.svg)"></span>‹ All runs</a>
+ <a class="helplink" href="#" id="help"><span class="ic" style="--i:url(/static/icons/help.svg)"></span>Help</a></nav>
+
+<header class="runhead">
+ <div class="rh-top"><h1 id="rName" title="Click to rename"></h1><button class="quiet small" id="rRename" hidden>Rename</button><span class="pill" id="rStatus"></span></div>
+ <div class="facts" id="rFacts"></div>
+ <div class="rh-path"><span class="mut">Images:</span> <span id="rFolder"></span></div>
+ <details class="rh-more"><summary>Details</summary><div id="rDetails"></div></details>
+</header>
+
+<div class="banner warn" id="otherRun" hidden><span id="otherTxt"></span><span class="row"><button id="switchBack" class="primary small"></button><button id="goOther" class="small"></button></span></div>
+<div class="banner" id="busyElse" hidden></div>
+
+<ol class="steps">
+<li class="step" id="st1"><div class="marker"><span>1</span></div><div class="sbody">
+ <h2>Detect kidney outlines</h2>
+ <div class="donebox" id="doneBox" hidden><span class="ic ok" style="--i:url(/static/icons/check.svg)"></span><span id="doneText"></span>
+  <button class="secondary" id="again"><span class="ic" style="--i:url(/static/icons/run-again.svg)"></span>Run again…</button></div>
+ <div id="startBox">
+  <div class="pxrow"><label for="modelSel">Model</label><select id="modelSel">
+   <option value="kc009">KC009: 3 models, accuracy measured (recommended)</option>
+   <option value="kc014-all">KC014: one all-data model, trained on data v1, no measured accuracy</option></select></div>
+  <div class="calib warn" id="modelNote" hidden></div>
+  <div class="pxrow"><label for="pxIn">Pixel size (µm/pixel)</label><input type="text" id="pxIn" inputmode="decimal" size="8" placeholder="from TIFF">
+   <span class="mut">Leave empty to use the TIFF metadata. A value here is used for all images.</span></div>
+  <div class="where"><span class="ic" style="--i:url(/static/icons/run-detection.svg)"></span><span id="device"></span><button id="whereBtn"><span class="ic" style="--i:url(/static/icons/settings.svg)"></span>Change where detection runs</button></div>
+  <div class="preload" id="preload" hidden><span class="progress small"><div id="preBar"></div></span><span id="preTxt"></span></div>
+  <div class="row"><button class="primary big" id="start" disabled><span class="ic" style="--i:url(/static/icons/run-detection.svg)"></span>Run detection</button>
+   <label><input type="checkbox" id="fast"> Fast mode (1 model instead of 3)</label></div>
+ </div>
+ <div id="runBox" hidden>
+  <div class="runline"><div class="progress" id="bar"><div></div></div><span class="pct" id="pct"></span><button class="quiet" id="cancel"><span class="ic" style="--i:url(/static/icons/cancel.svg)"></span>Cancel</button></div>
+  <div class="status" id="statusLine"></div>
+  <div class="mut" id="subLine"></div>
+  <details class="log"><summary>Processing details</summary><pre id="log"></pre></details>
+ </div>
+ <div class="err" id="err2"></div>
+</div></li>
+
+<li class="step" id="st2"><div class="marker"><span>2</span></div><div class="sbody">
+ <h2>Review outlines</h2>
+ <p class="lockmsg mut" id="lock2">Available after detection.</p>
+ <div id="res" hidden>
+  <div class="stats" id="nums"></div>
+  <div class="calib warn" id="calib" hidden></div>
+  <div class="btnrow one"><button class="primary big" id="review"><span class="ic" style="--i:url(/static/icons/review-results.svg)"></span><span id="reviewTxt">Review outlines</span></button></div>
+ </div>
+</div></li>
+
+<li class="step" id="st3"><div class="marker"><span>3</span></div><div class="sbody">
+ <h2>Results</h2>
+ <p class="lockmsg mut" id="lock3">Available after detection. The report and Excel table update after every review decision.</p>
+ <div id="exp" hidden>
+  <div class="btnrow three"><button class="big" id="openReport"><span class="ic" style="--i:url(/static/icons/batch-analysis.svg)"></span>Open report</button>
+   <button class="big" id="openTable"><span class="ic" style="--i:url(/static/icons/export-results.svg)"></span>Open Excel table</button>
+   <button class="big" id="openFolder"><span class="ic" style="--i:url(/static/icons/open-project.svg)"></span>Open results folder</button></div>
+  <details class="qpfold"><summary>QuPath <span class="tag">optional</span></summary>
+   <p class="mut">Open the outlines in QuPath, edit them there, then import the edits back into KidneyCyst.</p>
+   <div class="btnrow"><button class="big" id="qpOpen"><span class="ic" style="--i:url(/static/icons/open-project.svg)"></span>Open in QuPath</button>
+    <button class="big" id="qpSync"><span class="ic" style="--i:url(/static/icons/import-images.svg)"></span>Import QuPath edits</button></div></details>
+  <div class="err" id="err3"></div>
+ </div>
+</div></li>
+</ol>
+</main>
+
+<div class="modal" id="gpuDlg" hidden><div class="box wide">
+ <h3>Where detection runs</h3>
+ <label class="opt"><input type="radio" name="where" value="here"><span><b>This computer</b><br><span class="mut" id="hereTxt"></span></span></label>
+ <label class="opt"><input type="radio" name="where" value="remote"><span><b>Another computer, over SSH</b><br><span class="mut">For a computer with a graphics card that you can log in to. Images are copied there for detection; review, report and files stay here.</span></span></label>
+ <div id="remoteBox" hidden>
+  <label class="fld">Computer name or address<input type="text" id="gHost" placeholder="for example gpu-box or name@10.1.2.3" autocomplete="off" spellcheck="false"></label>
+  <details class="adv"><summary>Advanced: command that starts KidneyCyst there</summary>
+   <input type="text" id="gCmd" placeholder="found automatically" autocomplete="off" spellcheck="false"></details>
+  <div class="row"><button id="gTest">Test connection</button><button id="gKey" hidden>Set up key login…</button><button class="primary" id="gInstall" hidden>Install KidneyCyst there</button><span class="mut" id="gBusy"></span></div>
+  <ul class="checks" id="gSteps"></ul>
+  <div id="gInst" hidden><div class="runline"><div class="progress" id="gIBar"><div></div></div><span class="pct" id="gIPct"></span></div>
+   <p id="gIStep"></p><details class="adv"><summary>Installation details</summary><pre class="log" id="gILog"></pre></details>
+   <p class="mut small">You can close this window; the installation carries on. Open it again to see how far it is.</p></div>
+  <div id="gSlurm" hidden><label class="fld">Job options (Slurm)<input type="text" id="gOpts" autocomplete="off" spellcheck="false"></label>
+   <p class="mut small">Detection is submitted as a job and starts when a GPU is free. Change the partition or time limit here if your cluster needs it.</p></div>
+ </div>
+ <div class="row end"><button class="quiet" id="gCancel">Cancel</button><button class="primary" id="gSave">Save</button></div>
+</div></div>
+<div class="modal" id="modal" hidden><div class="box"><h3 id="mTitle"></h3><div id="mText"></div><div class="row" id="mBtns"></div></div></div>
+
+<script>
+const T='__TOKEN__';
+let RUN='',INFO={};
+async function api(p,b){const h={'X-Token':T};if(RUN)h['X-Run']=encodeURIComponent(RUN);
+ const o=b===undefined?{headers:h}:{method:'POST',headers:Object.assign(h,{'Content-Type':'application/json'}),body:JSON.stringify(b)};
+ const r=await fetch(p,o);const j=await r.json();if(r.status===409&&j.other_run){otherRun(j);return new Promise(()=>{})}return j}
+const $=id=>document.getElementById(id);
+const fmt=x=>x==null?'–':Number(x).toLocaleString('en-US',{maximumFractionDigits:0});
+const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const mins=s=>s<90?`${Math.round(s)} s`:`${Math.round(s/60)} min`;
+const STATUS={new:['Not detected yet','st-new'],detected:['Detected','st-det'],'in review':['In review','st-rev'],final:['Final','st-fin'],cancelled:['Cancelled','st-can']};
+let polling=null,running=false;
+function modal(title,text,buttons){return new Promise(res=>{$('mTitle').textContent=title;$('mText').innerHTML=text;$('mBtns').innerHTML='';
+ buttons.forEach(([label,val,cls])=>{const b=document.createElement('button');b.textContent=label;if(cls)b.className=cls;b.onclick=()=>{$('modal').hidden=true;res(val)};$('mBtns').appendChild(b)});
+ $('modal').hidden=false;$('mBtns').lastChild.focus()})}
+
+// ---------------- another tab opened a different run
+function otherRun(j){clearInterval(polling);$('otherRun').hidden=false;document.querySelector('.steps').classList.add('frozen');
+ $('otherTxt').textContent=`Another run (${j.current_name||'unnamed'}) was opened in a different tab. This page is paused so nothing is saved to the wrong run.`;
+ $('switchBack').textContent=`Switch back to ${INFO.name||'this run'}`;$('goOther').textContent=`Go to ${j.current_name||'the other run'}`;
+ $('switchBack').onclick=()=>{location.href=INFO.id?`/run?id=${INFO.id}&t=${T}`:`/?t=${T}`};
+ $('goOther').onclick=()=>{location.href=j.current_id?`/run?id=${j.current_id}&t=${T}`:`/run?t=${T}`}}
+
+// ---------------- header
+function header(i){INFO=i;RUN=i.out;document.title=`${i.name} – KidneyCyst`;
+ $('rName').textContent=i.name;$('rRename').hidden=!i.id;$('rName').classList.toggle('editable',!!i.id);
+ const st=STATUS[i.status]||[i.status,''];let label=st[0];
+ if(i.status==='in review'&&i.n)label+=` ${i.reviewed}/${i.n}`;$('rStatus').textContent=label;$('rStatus').className='pill '+st[1];
+ const s=i.summary,f=[];
+ if(s){f.push(`${s.n} images`);if(i.created)f.push('detected '+i.created.slice(0,16).replace('T',' '));
+  if(i.model)f.push(i.model.split('-')[0]);f.push(i.ran_on?'on '+i.ran_on:(i.device||''))}
+ else f.push(`${i.n_tiffs} TIFF image${i.n_tiffs===1?'':'s'} · not detected yet`);
+ $('rFacts').textContent=f.filter(Boolean).join(' · ');
+ $('rFolder').innerHTML=i.folder?esc(i.folder):'<span class="err">Image folder not found (moved or on a drive that is not connected). Review and results still work.</span>';
+ $('rDetails').innerHTML=`Results folder: ${esc(i.out)}`+(i.seconds?`<br>Detection took ${mins(i.seconds)}.`:'');
+ if(i.id&&!new URLSearchParams(location.search).get('id'))history.replaceState(null,'',`/run?id=${i.id}&t=${T}`);
+ $('busyElse').hidden=!i.job_elsewhere;if(i.job_elsewhere)$('busyElse').textContent='A detection for another run is in progress. Start this one after it finishes.'}
+async function renameRun(){if(!INFO.id)return;
+ const v=await modal('Rename run',`<input type="text" id="newName" value="${esc(INFO.name)}" style="width:100%;margin-top:6px">`,[['Cancel',null],['Save name','ok','primary']]);
+ if(v){const n=document.getElementById('newName').value.trim();if(n){await api('/api/library',{action:'rename',id:INFO.id,name:n});header(await api('/api/run-info'))}}}
+$('rRename').onclick=renameRun;$('rName').onclick=renameRun;
+
+// ---------------- steps
+function mark(id,state){const el=$(id);el.classList.remove('done','current','locked');if(state)el.classList.add(state)}
+function showSummary(s){
+ const done=!!s&&!running;$('doneBox').hidden=!done;$('startBox').hidden=done||!INFO.folder&&!!s;if(done)$('runBox').hidden=true;
+ if(done){const r=s.run||{};$('doneText').innerHTML=r.cancelled?`Partial results: <b>${s.n} images</b>`+(r.date?`, ${r.date}`:'')+'. Detection was cancelled.':`<b>${s.n} images</b> detected`+(r.date?` on ${r.date}`:'')+'.'}
+ $('again').hidden=!INFO.folder;
+ const todo=s?s.n-s.reviewed:0;
+ mark('st1',running?'current':(s?'done':'current'));
+ mark('st2',!s||running?'locked':(todo?'current':'done'));
+ mark('st3',!s||running?'locked':(todo?'':'current'));
+ $('res').hidden=!s||running;$('lock2').hidden=!!s&&!running;$('exp').hidden=!s||running;$('lock3').hidden=!!s&&!running;if(!s)return;
+ const medNote=s.median_includes_unchecked?`median area<br>${s.with_kidney} images, ${s.median_includes_unchecked} not yet reviewed`:`median area<br>${s.with_kidney} images, all reviewed`;
+ $('nums').innerHTML=[[s.n,'images'],[s.with_kidney,'with an outline'],[s.reviewed,'reviewed'],[todo,'unreviewed'],[s.median?fmt(s.median)+' µm²':'–',medNote]]
+  .map(([b,t])=>`<div><b>${b}</b><span>${t}</span></div>`).join('');
+ $('reviewTxt').textContent=s.reviewed?(todo?`Resume review (${todo} left)`:'Review again'):'Review outlines';
+ const c=s.calibration||{};$('calib').hidden=!c.assumed;$('calib').textContent=c.assumed?c.text:''}
+$('again').onclick=()=>{$('doneBox').hidden=true;$('startBox').hidden=false;$('start').disabled=false;$('start').focus()};
+
+// ---------------- where detection runs
+let GPU={};
+async function preloadPoll(){const j=await api('/api/job');const L=j.load||{};const box=$('preload');
+ if(j.running||GPU.enabled){box.hidden=true;return}
+ if(L.error){box.hidden=false;$('preTxt').textContent='The model could not be prepared: '+L.error;return}
+ if(L.done){box.hidden=false;$('preBar').style.width='100%';$('preTxt').textContent='Model ready.';return}
+ box.hidden=false;$('preBar').style.width=(L.n?100*Math.max(L.k-1,0)/L.n:3)+'%';
+ $('preTxt').textContent=L.n?`Preparing the model: ${L.text} (step ${L.k} of ${L.n})`:'Preparing the model…';setTimeout(preloadPoll,700)}
+function modelUI(){const m=(GPU.models||[]).find(x=>x.id==='kc014-all');const o=$('modelSel').querySelector('option[value="kc014-all"]');
+ const ok=!GPU.models||(!!m&&(m.available_here||GPU.enabled));   // unknown until settings load: never reset a choice early
+ o.disabled=!ok;o.textContent='KC014: one all-data model, trained on data v1, no measured accuracy'+(ok?'':' (not in this installation)');
+ if(!ok&&$('modelSel').value!=='kc009')$('modelSel').value='kc009';
+ const k=$('modelSel').value==='kc014-all';$('modelNote').hidden=!k;
+ if(k)$('modelNote').textContent=`KC014 was ${m?m.note:'trained on all data v1; no measured accuracy'}. Results record which model was used.`;
+ $('fast').disabled=k;if(k)$('fast').checked=false;$('fast').parentElement.classList.toggle('mut',k)}
+$('modelSel').onchange=modelUI;
+async function whereLine(){GPU=await api('/api/gpu-settings',{});modelUI();
+ const part=((GPU.slurm_options||'').match(/--partition[= ](\S+)/)||[])[1];
+ $('device').textContent=!GPU.enabled?GPU.here:GPU.slurm?`Detection runs as a job on ${GPU.host}`+(part?` (partition ${part}).`:'.')
+  :`Detection runs on ${GPU.host}`+(GPU.info&&GPU.info.device_name?` (${GPU.info.device_name}).`:'.')}
+let gTested='';
+function gShow(){const r=document.querySelector('input[name=where]:checked').value==='remote';$('remoteBox').hidden=!r;
+ $('gSave').disabled=r&&(!$('gHost').value.trim()||gTested!==$('gHost').value.trim())}
+$('whereBtn').onclick=async()=>{await whereLine();$('hereTxt').textContent=GPU.here.replace('Processing device: ','');
+ document.querySelector(`input[name=where][value=${GPU.enabled?'remote':'here'}]`).checked=true;
+ $('gHost').value=GPU.host||'';$('gCmd').value=GPU.command||'';$('gSlurm').hidden=!(GPU.enabled&&GPU.slurm);$('gOpts').value=GPU.slurm_options||'';gTested=GPU.enabled?GPU.host:'';$('gSteps').innerHTML='';$('gKey').hidden=true;$('gBusy').textContent='';
+ if(!GPU.ssh)$('gSteps').innerHTML='<li class="bad">No SSH program found on this computer. On Windows 10/11 add “OpenSSH Client” under Settings › Apps › Optional features.</li>';
+ $('gInst').hidden=true;$('gInstall').hidden=true;gShow();$('gpuDlg').hidden=false;gInstPoll()};
+document.querySelectorAll('input[name=where]').forEach(r=>r.onchange=gShow);
+$('gHost').oninput=gShow;
+$('gTest').onclick=async()=>{const host=$('gHost').value.trim();if(!host)return;$('gTest').disabled=true;$('gKey').hidden=true;
+ $('gSteps').innerHTML='';$('gBusy').textContent='Connecting… (checking the other computer can take up to a minute)';
+ try{const r=await api('/api/gpu-test',{host,command:$('gCmd').value.trim()});
+  $('gSteps').innerHTML=r.steps.map(x=>`<li class="${x.ok?(x.warn?'warn':'ok'):'bad'}">${esc(x.text)}</li>`).join('');
+  $('gKey').hidden=!r.steps.some(x=>x.needs_key);$('gInstall').hidden=!r.can_install;if(r.ok){gTested=host;$('gCmd').value=r.command}else gTested='';
+  $('gSlurm').hidden=!(r.ok&&r.slurm);if(r.ok&&r.slurm&&!$('gOpts').value.trim())$('gOpts').value=r.slurm_default}
+ finally{$('gTest').disabled=false;$('gBusy').textContent='';gShow()}};
+$('gKey').onclick=async()=>{const r=await api('/api/gpu-key',{host:$('gHost').value.trim()});
+ $('gSteps').innerHTML+=r.ok?'<li class="warn">A terminal window opened. Type your password there once, then click Test connection again.</li>'
+  :`<li class="bad">${esc(r.error||'Could not open a terminal. Run this in a terminal: '+(r.manual||''))}</li>`};
+function gSteps(r){$('gSteps').innerHTML=r.steps.map(x=>`<li class="${x.ok?(x.warn?'warn':'ok'):'bad'}">${esc(x.text)}</li>`).join('')}
+let gIPoll=null;
+async function gInstPoll(){const s=await api('/api/gpu-install',{});if(!s.running&&!s.done){$('gInst').hidden=true;return}
+ $('gInst').hidden=false;$('gInstall').hidden=true;$('gTest').disabled=s.running;
+ const pc=s.step.startsWith('Copying')&&s.xfer_total?Math.min(100,Math.round(100*s.xfer/s.xfer_total)):null;
+ $('gIBar').classList.toggle('indet',pc===null&&s.running);$('gIBar').firstElementChild.style.width=pc!==null?pc+'%':s.running?'':(s.ok?'100%':'0%');
+ $('gIPct').textContent=pc===null?'':pc+' %';$('gIStep').textContent=s.error?'':s.step;$('gILog').textContent=s.lines.join('\n');
+ if(s.running){clearTimeout(gIPoll);gIPoll=setTimeout(gInstPoll,2000);return}
+ $('gTest').disabled=false;
+ if(s.error){$('gSteps').innerHTML+=`<li class="bad">${esc(s.error)}</li>`;$('gInstall').hidden=false;$('gInstall').textContent='Try the installation again';return}
+ if(s.result){gSteps(s.result);if(s.result.ok){$('gHost').value=s.host;gTested=s.host;$('gCmd').value=s.result.command;
+  $('gSlurm').hidden=!s.result.slurm;if(s.result.slurm&&!$('gOpts').value.trim())$('gOpts').value=s.result.slurm_default;
+  $('gIStep').textContent='KidneyCyst is installed on '+s.host+'. Click Save to use it.';gShow()}}}
+$('gInstall').onclick=async()=>{const host=$('gHost').value.trim();
+ const ok=await modal('Install KidneyCyst on '+esc(host)+'?','The app copies the program and model from this computer to a new folder <b>~/KidneyCyst-remote</b> in your home folder there, and downloads Python and PyTorch there. It takes about 10 minutes and needs about 8 GB there. Nothing else on that computer is changed.',
+  [['Cancel',false,'quiet'],['Install',true,'primary']]);if(!ok)return;
+ const r=await api('/api/gpu-install',{host,start:true});if(!r.ok){$('gSteps').innerHTML+=`<li class="bad">${esc(r.error)}</li>`;return}
+ $('gSteps').innerHTML='';gInstPoll()};
+$('gCancel').onclick=()=>{$('gpuDlg').hidden=true};
+$('gSave').onclick=async()=>{const remote=document.querySelector('input[name=where]:checked').value==='remote';
+ const r=await api('/api/gpu-settings',remote?{enabled:true,host:$('gHost').value.trim(),command:$('gCmd').value.trim(),slurm_options:$('gOpts').value.trim()}:{enabled:false});
+ if(r.error){$('gSteps').innerHTML+=`<li class="bad">${esc(r.error)}</li>`;return}
+ $('gpuDlg').hidden=true;whereLine();preloadPoll()};
+
+// ---------------- detection
+function pxVal(){return $('pxIn').value.trim().replace(',','.')}
+$('start').onclick=async()=>{$('err2').textContent='';
+ const px=pxVal();if(px&&!(+px>0.01&&+px<100)){$('err2').textContent='Enter a pixel size between 0.01 and 100 µm, or leave the field empty.';return}
+ let r=await api('/api/run',{fast:$('fast').checked,model:$('modelSel').value,pixel_size:px?+px:null});
+ if(r.needs_confirm){const ok=await modal('Run detection again?','This run has reviewed results. A new run will archive the existing results in a <i>replaced_…</i> folder. Previous review decisions will not be included in the new results.',
+   [['Keep current results',false],['Run again',true,'primary']]);if(!ok)return;r=await api('/api/run',{fast:$('fast').checked,model:$('modelSel').value,force:true,pixel_size:px?+px:null})}
+ if(r.error){$('err2').textContent=r.error;return}
+ if(r.ok===false){$('err2').textContent='A detection is already running.';return}
+ follow()};
+$('cancel').onclick=async()=>{const ok=await modal('Cancel detection?','Completed results will be retained and available for review.',[['Keep running',false],['Cancel detection',true,'primary']]);
+ if(ok){await api('/api/cancel',{});$('statusLine').textContent='Stopping after the current image…'}};
+function follow(){running=true;$('preload').hidden=true;$('doneBox').hidden=true;$('startBox').hidden=false;$('runBox').hidden=false;$('start').disabled=true;$('cancel').hidden=false;
+ showSummary(INFO.summary);clearInterval(polling);polling=setInterval(poll,1000);poll()}
+async function poll(){const j=await api('/api/job');const bar=$('bar');
+ $('log').textContent=j.log.join('\n');$('log').scrollTop=1e9;
+ if(j.phase==='loading'){const L=j.load||{};
+  if(j.where){bar.className='progress indet';$('pct').textContent='';$('statusLine').textContent=`Starting KidneyCyst on ${j.where} and loading the model…`}
+  else if(L.done){bar.className='progress';bar.firstChild.style.width='0%';$('pct').textContent='0%';$('statusLine').textContent='Processing the first image…'}
+  else if(L.n){const p=Math.round(100*Math.max(L.k-1,0)/L.n);bar.className='progress';bar.firstChild.style.width=p+'%';$('pct').textContent=`Loading model ${p}%`;
+   $('statusLine').textContent=`Loading model: ${L.text} (step ${L.k} of ${L.n})`}
+  else{bar.className='progress indet';$('pct').textContent='';$('statusLine').textContent='Loading model…'}
+  $('subLine').textContent=`Elapsed: ${mins(j.elapsed)}.`}
+ else if(j.phase==='queued'){bar.className='progress indet';$('pct').textContent='In queue';
+  $('statusLine').textContent=`Waiting for a GPU on ${j.where} (job ${j.slurm_id}${j.queue_reason?': '+j.queue_reason:''}).`;$('subLine').textContent=`Elapsed: ${mins(j.elapsed)}. Cancelling now withdraws the job.`}
+ else if(j.phase==='uploading'){const p=j.xfer_total?Math.min(100,Math.round(100*j.xfer/j.xfer_total)):0;bar.className='progress';bar.firstChild.style.width=p+'%';
+  $('pct').textContent=`Copying ${p}%`;$('statusLine').textContent=`Copying images to ${j.where}: ${(j.xfer/1e6).toFixed(0)} of ${(j.xfer_total/1e6).toFixed(0)} MB.`;$('subLine').textContent=`Elapsed: ${mins(j.elapsed)}.`}
+ else if(j.phase==='downloading'){bar.className='progress indet';$('pct').textContent='';$('statusLine').textContent=`Copying results back from ${j.where}: ${(j.xfer/1e6).toFixed(0)} MB.`;$('subLine').textContent=''}
+ else if(j.phase==='predicting'){bar.className='progress';const p=Math.round(100*j.i/Math.max(j.n,1));bar.firstChild.style.width=p+'%';$('pct').textContent=`${p}%`+(j.left!=null?` · about ${mins(j.left)} left`:'');
+  $('statusLine').textContent=`Processed ${j.i} of ${j.n} images`+(j.where?` on ${j.where}.`:'.')+(j.current?` Last image: ${j.current}`:'');$('subLine').textContent=''}
+ else if(j.phase==='finishing'){bar.className='progress';bar.firstChild.style.width='100%';$('pct').textContent='100%';$('statusLine').textContent='Saving results and generating report…';$('subLine').textContent=''}
+ if(!j.running){clearInterval(polling);running=false;$('start').disabled=false;$('cancel').hidden=true;
+  if(j.phase==='error'){$('statusLine').textContent='Detection stopped.';$('err2').textContent=(j.cancelled?'':'Detection failed. ')+j.error+(j.cancelled?'':' See Processing details for diagnostic information.');
+   if(j.where&&!j.cancelled){const ok=await modal(`Detection on ${j.where} did not finish`,esc(j.error)+'<br><br>Run detection on this computer instead? It is slower without a graphics card.',[['Not now',false],['Run on this computer',true,'primary']]);
+    if(ok){$('err2').textContent='';const px=pxVal();await api('/api/run',{fast:$('fast').checked,model:$('modelSel').value,force:true,pixel_size:px?+px:null,local:true});follow();return}}}
+  else{bar.className='progress';bar.firstChild.style.width='100%';
+   $('statusLine').innerHTML=j.cancelled?`Detection cancelled. Processed ${j.i} of ${j.n} images.`:`<span class="ok">Detection complete.</span> Duration: ${mins(j.elapsed)}.`}
+  const i=await api('/api/run-info');header(i);showSummary(i.summary);if(i.summary&&j.phase!=='error'){$('runBox').hidden=true;$('review').focus()}}}
+
+// ---------------- review and results
+$('review').onclick=()=>location.href=`/review?t=${T}`+(INFO.id?`&id=${INFO.id}`:'');
+$('openReport').onclick=()=>window.open('/report?t='+T,'_blank');
+$('openTable').onclick=async()=>{const r=await api('/api/open',{what:'table'});if(r.download)location.href=r.download;else if(r.error)$('err3').textContent=r.error};
+$('openFolder').onclick=async()=>{const r=await api('/api/open',{what:'folder'});if(r.error)$('err3').textContent=r.error};
+async function qp(action){$('err3').textContent='';let r=await api('/api/qupath',{action});
+ if(r.needs_support){const ok=await modal('Install QuPath integration?',
+   'Download and install paquo and JPype (approximately 30 MB) to exchange outlines with QuPath.'+
+   (r.qupath_found?'':' QuPath 0.6.0 will also be downloaded (approximately 260 MB).')+' An internet connection is required.<br><br>You can review outlines in KidneyCyst without installing these components.',
+   [['Not now',false],['Install integration',true,'primary']]);
+  if(!ok)return;$('err3').textContent='Installing QuPath integration…';const i=await api('/api/qupath',{action:'install_support'});
+  $('err3').textContent='';if(i.error){$('err3').textContent=i.error;return}r=await api('/api/qupath',{action})}
+ if(r.needs_qupath){const ok=await modal('QuPath is not installed','Download QuPath 0.6.0 (approximately 260 MB). An internet connection is required.',[['Not now',false],['Download QuPath',true,'primary']]);
+  if(!ok)return;$('err3').textContent='Downloading QuPath…';r=await api('/api/qupath',{action:'download'});$('err3').textContent='';if(action!=='open')r=await api('/api/qupath',{action})}
+ if(r.error)$('err3').textContent=r.error;else if(action==='sync'){const i=await api('/api/run-info');header(i);showSummary(i.summary)}}
+$('qpOpen').onclick=()=>qp('open');$('qpSync').onclick=()=>qp('sync');
+$('back').onclick=e=>{e.preventDefault();location.href='/?t='+T};
+$('help').onclick=e=>{e.preventDefault();location.href='/help?t='+T};
+
+(async()=>{RUN='';const i=await fetch('/api/run-info',{headers:{'X-Token':T}}).then(r=>r.json());
+ if(!i.open){location.replace('/?t='+T);return}
+ header(i);$('start').disabled=!i.folder||!i.n_tiffs;
+ if(!i.summary&&i.folder&&!i.n_tiffs)$('err2').textContent='No TIFF images found in this folder or its subfolders.';
+ if((i.model||'').startsWith('KC014'))$('modelSel').value='kc014-all';
+ await whereLine();showSummary(i.summary);
+ if(i.job_here)follow();else if(!i.summary)preloadPoll()})();
+setInterval(()=>api('/api/ping',{}).catch(()=>{}),20000);
+window.addEventListener('focus',async()=>{if(running||!$('otherRun').hidden)return;try{const i=await api('/api/run-info');header(i);showSummary(i.summary)}catch(e){}});
+</script></body></html>

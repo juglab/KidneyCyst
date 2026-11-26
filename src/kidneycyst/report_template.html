@@ -1,0 +1,347 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kidney outline report</title>
+<style>
+:root{--ink:#17324D;--mut:#536679;--line:#CAD5E2;--panel:#EAF2FA;--green:#167047;--cyan:#167047;--orange:#B64A00;--blue:#075DB8}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:#F3F7FB}
+body{margin:0;color:var(--ink);font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:none;margin:0;padding:20px 28px 48px}
+table{background:#fff}
+header{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:10px 24px;border-bottom:1px solid var(--line);padding-bottom:12px}
+@media(max-width:820px){header{grid-template-columns:1fr}}
+.head{display:flex;flex-direction:column;gap:4px;min-width:0}
+.head .src{overflow-wrap:anywhere}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+.tools button{display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:14px;padding:8px 14px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);cursor:pointer;min-height:38px}
+.tools button:hover{border-color:var(--mut)}
+.tools button.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+.updated{margin:8px 0 0;color:var(--blue);font-size:12px}
+@page{size:A4 landscape;margin:10mm}
+@media print{html,body{background:#fff}.tools,.bar,.updated,details.how summary{display:none!important}.wrap{padding:0}
+ #imgs tr{break-inside:avoid}#imgs th{position:static}img.th{width:56px;height:56px}details.how{display:block}
+ *{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+h1{font-size:20px;margin:0;font-weight:650}
+header .src{color:var(--mut);font-size:12px;overflow-wrap:anywhere}
+.nums{display:flex;flex-wrap:wrap;gap:4px 22px;margin:12px 0 14px}
+.nums span{color:var(--mut)}.nums b{color:var(--ink);font-size:16px;font-weight:650;margin-right:4px}
+
+@media(max-width:760px){.top{grid-template-columns:1fr}}
+h2{font-size:13px;font-weight:650;margin:0 0 6px}
+table{border-collapse:collapse;width:100%}
+th,td{white-space:nowrap;padding:4px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-weight:600;color:var(--mut);background:var(--panel);white-space:nowrap}
+td.n,th.n{text-align:right}
+#imgs th{cursor:pointer;position:sticky;top:0;z-index:1}
+#imgs th:hover{color:var(--ink)}
+#imgs td{padding:3px 8px}
+img.th{width:72px;height:72px;display:block;background:#000}
+.id{font-weight:600}.file{color:var(--mut);font-size:11px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.flag{color:var(--orange)}
+.d-auto{color:var(--mut)}.d-accepted,.d-edited,.d-deleted{color:var(--green)}.d-unusable{color:var(--mut)}
+.mut{color:var(--mut)}
+.bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:6px 0 8px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:#fff;padding:5px 11px;font:inherit;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}.seg button.on{background:var(--panel);color:var(--blue);font-weight:600;box-shadow:inset 0 -2px 0 var(--blue)}
+input[type=search]{font:inherit;padding:5px 8px;border:1px solid var(--line);border-radius:6px;min-width:200px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.hist rect{fill:#8a9099}.hist text{font-size:12px;fill:var(--mut)}
+
+#imgs td.flag{white-space:normal;min-width:180px}
+.hist{display:block}
+.scroll{overflow-x:auto}
+details.how{margin-top:10px}details.how summary{cursor:pointer;color:var(--mut)}details.how th{width:260px;background:var(--panel)}details.how td{overflow-wrap:anywhere;font-size:12px}
+
+.tiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));margin:16px 0 18px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 0}
+.tiles>div{display:flex;flex-direction:column;gap:2px;padding:0 18px;border-left:1px solid var(--line);min-width:0}
+.tiles>div:first-child{border-left:0}
+.tiles b{font-size:22px;font-weight:650;line-height:1.2;white-space:nowrap}
+.tiles span{color:var(--mut);font-size:12px}
+@media(max-width:760px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:12px}.tiles>div:nth-child(odd){border-left:0}}
+.top{display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:18px}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+.card h2{margin:0 0 10px}
+.card table{width:100%}
+.cardhead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--mut)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%}
+.legend i.dash{width:16px;height:0;border-radius:0;border-top:2px dashed #17324D}
+.hist text{font-size:11px;fill:var(--mut)}
+.hist .medlab{fill:#17324D;font-weight:600}
+.axislab{font-size:11px;color:var(--mut);text-align:right;margin-top:-2px}
+
+.cardsub{margin:-4px 0 12px;color:var(--mut);font-size:12px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:16px;align-items:start}
+.two .card{margin:0}
+button.small{font:inherit;font-size:13px;padding:6px 12px;border:1px solid var(--blue);color:var(--blue);background:#fff;border-radius:6px;cursor:pointer;font-weight:600}
+.pm{margin:0 0 14px}.pmtitle{font-weight:600;margin:0 0 6px}
+.pmgrid{display:grid;gap:3px}
+.pmwrap{display:grid;grid-template-columns:minmax(0,900px) minmax(300px,1fr);gap:22px;align-items:start}
+@media(max-width:1100px){.pmwrap{grid-template-columns:1fr}}
+.pmdetail{position:sticky;top:12px;border:1px solid var(--line);border-radius:10px;padding:14px;background:#FAFCFE;min-height:120px}
+.pmdetail h3{margin:0 0 2px;font-size:16px}.pmdetail .sub{color:var(--mut);font-size:12px;margin-bottom:10px}
+.pmstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 12px}
+.pmstats div{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px}.pmstats b{display:block;font-size:17px}.pmstats span{font-size:11px;color:var(--mut)}
+.pmimgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.pmimg{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:12px}
+.pmimg img{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:#000}
+.pmimg .cap{padding:6px 8px;line-height:1.35}.pmimg .cap b{font-size:13px}
+.viewer{position:fixed;inset:0;background:rgba(15,25,38,.55);display:grid;place-items:center;z-index:50;padding:16px}
+.viewer[hidden]{display:none}
+.vbox{background:#fff;border-radius:12px;max-width:1100px;width:100%;max-height:calc(100vh - 32px);overflow:auto;padding:18px 20px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.vhead{display:flex;justify-content:space-between;align-items:start;gap:12px}.vhead h3{margin:0;font-size:18px}
+.vclose{font-size:26px;line-height:1;border:0;background:none;cursor:pointer;color:var(--mut);padding:0 4px}
+.vimgs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+.vimgs figure{margin:0}.vimgs img{width:100%;aspect-ratio:1;object-fit:contain;background:#000;border-radius:8px;display:block;image-rendering:auto}
+.vimgs figcaption{font-size:12px;color:var(--mut);margin-top:4px}
+.vinfo{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin-bottom:12px}
+.vinfo div{border:1px solid var(--line);border-radius:8px;padding:6px 10px}.vinfo span{display:block;font-size:11px}.vinfo b{font-size:14px}
+.vfoot{display:flex;align-items:center;gap:10px}
+button.small.primary{background:var(--blue);color:#fff}
+button.small:disabled{opacity:.4;cursor:default}
+.pmimg,img.th{cursor:zoom-in}
+@media(max-width:700px){.vimgs{grid-template-columns:1fr}}
+@media print{.viewer{display:none!important}}
+.well.sel{outline:3px solid #17324D;outline-offset:1px}
+.pmh{font-size:11px;color:var(--mut);text-align:center;align-self:center}
+.well{aspect-ratio:1.35;border:1px solid var(--line);border-radius:4px;background:#fff;font:600 11px/1 inherit;font-variant-numeric:tabular-nums;color:#17324D;cursor:pointer;position:relative;padding:0}
+.well.empty{background:transparent;border-style:dashed;cursor:default}
+.well.none{background:repeating-linear-gradient(45deg,#eef1f4 0 4px,#fff 4px 8px)}
+.well.att::after{content:'';position:absolute;top:0;right:0;border-style:solid;border-width:0 9px 9px 0;border-color:transparent #FF8500 transparent transparent}
+.well:hover:not(.empty){outline:2px solid var(--blue);outline-offset:1px}
+.legend i.grad{width:44px;height:10px;border-radius:2px;background:linear-gradient(90deg,#EAF2FA,#075DB8)}
+.legend i.nonei{width:14px;height:10px;border-radius:2px;background:repeating-linear-gradient(45deg,#e2e6ea 0 3px,#fff 3px 6px);border:1px solid var(--line)}
+.legend i.atti{width:0;height:0;border-radius:0;border-style:solid;border-width:0 10px 10px 0;border-color:transparent #FF8500 transparent transparent}
+.condsvg text{font-size:11px;fill:var(--mut)}.condsvg .cname{fill:#17324D;font-weight:600;font-size:12px}
+p.small{font-size:12px}
+.lead{margin:0 0 12px}
+.hbar{display:grid;grid-template-columns:minmax(120px,1.3fr) 2fr 34px;align-items:center;gap:10px;margin:5px 0;font-size:13px}
+.hbar .track{height:10px;background:#EAF2FA;border-radius:5px;overflow:hidden}.hbar .track i{display:block;height:100%;background:#5b8fd0;border-radius:5px}
+.hbar.flag .track i{background:#FF8500}.hbar.dec.grey .track i{background:#9aa8b8}.hbar.dec .track i{background:#167047}
+.hbar b{text-align:right;font-variant-numeric:tabular-nums}
+.card h4{font-size:12px;color:var(--mut);margin:12px 0 4px;font-weight:600}.card h4:first-child{margin-top:0}
+.modal{position:fixed;inset:0;background:rgba(23,50,77,.35);display:grid;place-items:center;z-index:50;padding:16px}
+.modal .box{background:#fff;border-radius:10px;padding:20px 22px;max-width:640px;width:100%;box-shadow:0 12px 40px rgba(23,50,77,.25)}
+.modal h3{margin:0 0 6px;font-size:18px}
+.laygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px 12px;margin:14px 0;max-height:50vh;overflow:auto}
+.laygrid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mut)}
+.laygrid input{font:inherit;font-size:14px;color:var(--ink);padding:6px 8px;border:1px solid var(--line);border-radius:6px}
+.mrow{display:flex;justify-content:flex-end;gap:8px}
+.mrow button{font:inherit;padding:8px 14px;border:1px solid var(--line);border-radius:6px;background:#fff;cursor:pointer}
+.mrow button.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+@media print{.modal,#tLayout{display:none!important}.well{break-inside:avoid}}
+.snapbar{margin:10px 0 0;padding:8px 12px;border-radius:6px;background:#EAF2FA;color:#17324D;font-size:13px}
+@media print{.snapbar{display:block!important}}
+td.beta{background:#FFFBF3}
+.modelnote{margin:8px 0 0;padding:8px 12px;border:1px solid #F5B971;background:#FFF6EA;border-radius:6px;font-size:13px}
+</style></head><body><div class="wrap">
+<header><div class="head"><h1>Kidney outline report</h1><span class="src" id="src"></span></div>
+<div class="tools">
+ <button id="tBack" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Back to the run</button>
+ <button id="tXls" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 20h16"/></svg>Open Excel table</button>
+ <button id="tSnap" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg>Save snapshot</button>
+ <button id="tReview" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM9 13l2 2 4-4"/></svg>Review outlines</button>
+ <button id="tPdf" class="primary"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg>Download PDF</button>
+</div></header>
+<div class="updated" id="updated" hidden>Results changed. Updating…</div>
+<div class="snapbar" id="snapbar" hidden></div>
+<div class="tiles" id="nums"></div>
+<div class="top">
+ <section class="card"><h2>Plate summary</h2><div class="scroll"><table id="plates"></table></div></section>
+ <section class="card"><div class="cardhead"><h2>Plate map</h2><span class="legend" id="pmLegend"></span></div>
+  <p class="cardsub">Median kidney area per well. Click a well to see its images and numbers on the right.</p>
+  <div class="pmwrap"><div id="pmap"></div><aside class="pmdetail" id="pmDetail"><p class="mut">Click a well to see its images and measurements here.</p></aside></div></section>
+ <section class="card"><div class="cardhead"><h2>Area by condition</h2><button class="small" id="tLayout" hidden>Set plate layout</button></div><div id="cond"></div></section>
+ <div class="two">
+  <section class="card"><h2>Model vs. review</h2><div id="mvr"></div></section>
+  <section class="card"><h2>Quality summary</h2><div id="qs"></div></section>
+ </div>
+</div>
+<div class="modal" id="lay" hidden><div class="box"><h3>Plate layout</h3>
+ <p class="mut">Name the treatment of each column or row once. It is saved with these results and added to the Excel table as a Condition column.</p>
+ <div class="seg" id="layMode"><button data-m="column" class="on">By column (1–12)</button><button data-m="row">By row (A–H)</button></div>
+ <div class="laygrid" id="layGrid"></div>
+ <div class="mrow"><button id="layCancel">Cancel</button><button class="primary" id="laySave">Save layout</button></div></div></div>
+<div class="bar">
+ <span class="seg" id="filt"><button data-f="all">All</button><button data-f="look">Flagged</button><button data-f="todo">Unreviewed</button><button data-f="done">Reviewed</button></span>
+ <input type="search" id="q" placeholder="Search well, image or flag" aria-label="Search">
+ <span class="mut" id="count"></span>
+</div>
+<div class="scroll"><table id="imgs"></table></div>
+<p class="mut betanote" id="betaNote" hidden>Grade and elbow (beta): computed from the model outline, not yet validated against manual grading and elbow measurements. The grade shows its probability; "?" marks a grade below the confidence threshold. "Yours" columns are measurements made in the review screen.</p>
+<p class="mut" style="margin-top:14px">Orange outlines are model-generated; blue outlines were manually corrected. Current area uses the reviewed outline when available, otherwise the model prediction. Images marked Cannot assess are excluded from area statistics. Measurements are exported to results.xlsx.</p>
+<details class="how"><summary>Analysis settings and provenance</summary><div id="how"></div></details>
+</div>
+<script>
+const D=/*__DATA__*/null, M=D.meta, R=D.rows;
+const fmt=(x,d=0)=>x==null||isNaN(x)?'':Number(x).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:d});
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const q=(a,p)=>{if(!a.length)return NaN;const s=[...a].sort((x,y)=>x-y),i=(s.length-1)*p,l=Math.floor(i);return s[l]+(s[Math.min(l+1,s.length-1)]-s[l])*(i-l)};
+const DEC={auto:'unreviewed',accepted:'✓ outline accepted',edited:'✓ outline corrected',deleted:'✓ no kidney visible',unusable:'cannot assess'};
+document.getElementById('src').textContent=`Input: ${M.folder} · Run: ${M.date} · KidneyCyst ${M.tool} · Model ${M.model}`;
+if(M.model_note){const w=document.createElement('div');w.className='modelnote';w.textContent=`Model note: ${M.model_name} was ${M.model_note}.`;document.getElementById('src').after(w)}
+document.getElementById('how').innerHTML='<table>'+(M.settings||[]).map(([k,v])=>`<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join('')+'</table>';
+const withK=R.filter(r=>r.area>0), rev=R.filter(r=>r.status!=='auto'), unch=withK.filter(r=>r.src==='model').length;
+const med=q(withK.map(r=>r.area),.5);
+document.getElementById('nums').innerHTML=[[R.length,'images'],[withK.length,'with an outline'],[rev.length,'reviewed'],
+ [R.filter(r=>r.flagged&&r.status==='auto').length,'flagged, unreviewed'],[isNaN(med)?'–':fmt(med)+' µm²',unch?`median area · incl. ${unch} unreviewed`:'median area · all reviewed']]
+ .map(([b,t])=>`<div><b>${b}</b><span>${t}</span></div>`).join('');
+(function(){const g={};R.forEach(r=>{const k=(r.run||'')+(r.plate!=null?' plate '+r.plate:'');(g[k]=g[k]||[]).push(r)});
+ let h='<tr><th>Plate</th><th class="n">Images</th><th class="n">With outline</th><th class="n">Reviewed</th><th class="n">Median area (µm²)</th><th class="n">Interquartile range (µm²)</th></tr>';
+ Object.keys(g).sort().forEach(k=>{const rs=g[k],a=rs.filter(r=>r.area>0).map(r=>r.area);
+  h+=`<tr><td>${esc(k)||'–'}</td><td class="n">${rs.length}</td><td class="n">${a.length}</td><td class="n">${rs.filter(r=>r.status!=='auto').length}</td><td class="n">${fmt(q(a,.5))}</td><td class="n">${fmt(q(a,.25))}–${fmt(q(a,.75))}</td></tr>`});
+ document.getElementById('plates').innerHTML=h})();
+// ---------- plate map: one 8x12 (or 16x24) grid per plate, colour = median area of the well
+const plateKey=r=>(r.run||'')+'|'+(r.plate??'');
+const plateName=k=>{const [ru,pl]=k.split('|');return [ru,pl?'plate '+pl:''].filter(Boolean).join(' ')||'Plate'};
+const medOf=a=>q(a,.5);
+(function(){const el=document.getElementById('pmap'),byP={};R.forEach(r=>{if(r.well)(byP[plateKey(r)]=byP[plateKey(r)]||[]).push(r)});
+ const keys=Object.keys(byP).sort();if(!keys.length){el.innerHTML='<span class="mut">Well names were not found in the file names, so a plate map cannot be drawn.</span>';return}
+ const wm={};let all=[];keys.forEach(k=>{byP[k].forEach(r=>{const id=k+'#'+r.well;(wm[id]=wm[id]||[]).push(r)})});
+ Object.values(wm).forEach(rs=>{const v=rs.filter(r=>r.area>0).map(r=>r.area);if(v.length)all.push(medOf(v))});
+ const lo=Math.min(...all),hi=Math.max(...all);
+ const col=v=>{if(!(hi>lo))return '#5b8fd0';const t=(v-lo)/(hi-lo);const a=[234,242,250],b=[7,93,184];return `rgb(${a.map((x,i)=>Math.round(x+(b[i]-x)*t)).join(',')})`};
+ let h='';keys.forEach(k=>{const ws=byP[k].map(r=>r.well);const maxRow=Math.max(...ws.map(w=>w.charCodeAt(0)-64)),maxCol=Math.max(...ws.map(w=>parseInt(w.slice(1))));
+  const nR=maxRow>8?16:8,nC=maxCol>12?24:12;
+  h+=`<div class="pm" data-k="${esc(k)}"><div class="pmtitle">${esc(plateName(k))}</div><div class="pmgrid" style="grid-template-columns:22px repeat(${nC},minmax(30px,1fr))"><span></span>`;
+  for(let c=1;c<=nC;c++)h+=`<span class="pmh">${c}</span>`;
+  for(let rI=0;rI<nR;rI++){const L=String.fromCharCode(65+rI);h+=`<span class="pmh">${L}</span>`;
+   for(let c=1;c<=nC;c++){const w=L+String(c).padStart(2,'0'),rs=wm[k+'#'+w];
+    if(!rs){h+=`<span class="well empty" title="${w}: no images"></span>`;continue}
+    const v=rs.filter(r=>r.area>0).map(r=>r.area),m=v.length?medOf(v):null,att=rs.some(r=>r.flagged&&r.status==='auto'&&r.area>0),todo=rs.some(r=>r.status==='auto');
+    const tip=`${w}: ${rs.length} image${rs.length>1?'s':''}${m?`, median ${fmt(m)} µm²`:', no outline'}${todo?', not all reviewed':', all reviewed'}`;
+    h+=`<button class="well${m?'':' none'}${att?' att':''}" data-w="${w}" title="${tip}" style="${m?`background:${col(m)};color:${(m-lo)/(hi-lo||1)>.55?'#fff':'#17324D'}`:''}">${m?(m/1000).toFixed(1):''}</button>`}}
+  h+='</div></div>'});
+ el.innerHTML=h;
+ document.getElementById('pmLegend').innerHTML=`<span><i class="grad"></i>${fmt(lo)}–${fmt(hi)} µm² (numbers in thousands)</span><span><i class="nonei"></i>no outline</span><span><i class="atti"></i>measured image flagged, unreviewed</span>`;
+ el.querySelectorAll('.well[data-w]').forEach(b=>b.onclick=()=>{el.querySelectorAll('.well.sel').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');
+  const k=b.closest('.pm').dataset.k,w=b.dataset.w,rs=(wm[k+'#'+w]||[]).slice().sort((a,c)=>(a.field??0)-(c.field??0));
+  const v=rs.filter(r=>r.area>0).map(r=>r.area),m=v.length?medOf(v):null,rev=rs.filter(r=>r.status!=='auto').length;
+  const cards=rs.map((r,i)=>`<div class="pmimg" data-i="${i}" tabindex="0" title="Open larger"><img src="${r.b}" alt="outline of ${esc(r.id)}" title="${esc(r.id)}"><div class="cap"><b>Field ${r.field??'–'}</b> · ${r.area==null?'–':r.area>0?fmt(r.area)+' µm²':'no outline'}
+    <div class="d-${r.status}">${DEC[r.status]||esc(r.status)}</div>${r.flags&&r.status==='auto'?`<div class="flag">${esc(r.flags)}</div>`:''}${r.grade?`<div class="mut">grade (beta): ${esc(r.grade)}${r.gp!=null?' '+Math.round(100*r.gp)+'%':''}</div>`:''}</div></div>`).join('');
+  document.getElementById('pmDetail').innerHTML=`<h3>Well ${esc(w)}</h3><div class="sub">${esc(plateName(k))}</div>
+   <div class="pmstats"><div><b>${rs.length}</b><span>images</span></div><div><b>${m?fmt(m):'–'}</b><span>median µm²</span></div><div><b>${rev}/${rs.length}</b><span>reviewed</span></div></div>
+   <div class="pmimgs">${cards}</div><p><button class="small" id="pmShow">Show in the table</button></p>`;
+  document.querySelectorAll('#pmDetail .pmimg').forEach(c=>{const go=()=>openViewer(rs,+c.dataset.i);c.onclick=go;c.onkeydown=e=>{if(e.key==='Enter')go()}});
+  document.getElementById('pmShow').onclick=()=>{query=w;document.getElementById('q').value=query;filt='all';draw();document.getElementById('imgs').scrollIntoView({behavior:'smooth'})}})})();
+
+// ---------- area by condition (needs the plate layout)
+(function(){const el=document.getElementById('cond'),L=M.layout,grp={};
+ R.forEach(r=>{if(r.cond&&r.area>0&&r.status!=='unusable')(grp[r.cond]=grp[r.cond]||[]).push(r)});
+ let names=Object.keys(grp);
+ if(!L||!names.length){el.innerHTML='<p class="mut">Name the treatment of each plate column or row to compare kidney areas between conditions.'+'</p>';return}
+ const ord=(L.order&&L.order.length?L.order:Object.values(L.labels||{}));names.sort((a,b)=>{const i=ord.indexOf(a),j=ord.indexOf(b);return (i<0?999:i)-(j<0?999:j)});
+ const vals=names.flatMap(n=>grp[n].map(r=>r.area)),mn=Math.min(...vals),mx=Math.max(...vals),span=Math.max(mx-mn,1);
+ const step=[100,200,250,500,1000,2000,2500,5000].find(st=>span/st<=5)||10000,lo=Math.max(0,Math.floor((mn-span*.08)/step)*step),hi=Math.ceil((mx+span*.08)/step)*step;
+ const W=Math.max(360,el.clientWidth||800),H=230,Lm=58,Rm=16,T=12,B=46,pw=W-Lm-Rm,ph=H-T-B,Y=v=>T+ph-(v-lo)/(hi-lo)*ph,cw=pw/names.length;
+ let s=`<svg width="${W}" height="${H}" class="condsvg" role="img" aria-label="Kidney area by condition">`;
+ for(let v=lo;v<=hi+1e-9;v+=step)s+=`<line x1="${Lm}" x2="${W-Rm}" y1="${Y(v)}" y2="${Y(v)}" stroke="#E3E9F0"/><text x="${Lm-8}" y="${Y(v)+4}" text-anchor="end">${fmt(v)}</text>`;
+ s+=`<text x="12" y="${T+ph/2}" transform="rotate(-90 12 ${T+ph/2})" text-anchor="middle">Area (µm²)</text>`;
+ names.forEach((n,i)=>{const cx=Lm+cw*(i+.5),v=grp[n].map(r=>r.area),m=medOf(v),q1=q(v,.25),q3=q(v,.75);
+  s+=`<rect x="${cx-cw*.28}" y="${Y(q3)}" width="${cw*.56}" height="${Math.max(Y(q1)-Y(q3),1)}" fill="#EAF2FA" stroke="#CAD5E2"/>`;
+  grp[n].forEach((r,k)=>{const jx=((k*7919)%100/100-.5)*cw*.4;s+=`<circle cx="${cx+jx}" cy="${Y(r.area)}" r="4.5" fill="${r.src==='model'?'#FF8500':'#167047'}" fill-opacity=".8"><title>${esc(r.id)}: ${fmt(r.area)} µm²</title></circle>`});
+  s+=`<line x1="${cx-cw*.32}" x2="${cx+cw*.32}" y1="${Y(m)}" y2="${Y(m)}" stroke="#17324D" stroke-width="2.5"/>`;
+  s+=`<text x="${cx}" y="${H-B+18}" text-anchor="middle" class="cname">${esc(n.length>18?n.slice(0,17)+'…':n)}</text><text x="${cx}" y="${H-B+33}" text-anchor="middle">n = ${v.length}</text>`});
+ el.innerHTML=s+'</svg><p class="mut small">Bar: median. Box: middle 50%. Dots: images (green reviewed, orange unreviewed). Images marked Cannot assess are left out.</p>'})();
+
+// ---------- model vs review
+(function(){const el=document.getElementById('mvr'),rv=R.filter(r=>r.status==='accepted'||r.status==='edited');
+ const nk=R.filter(r=>r.status==='deleted').length,ca=R.filter(r=>r.status==='unusable').length,todo=R.filter(r=>r.status==='auto').length;
+ if(!rv.length&&!nk&&!ca){el.innerHTML='<p class="mut">No images reviewed yet.</p>';return}
+ const ch=rv.filter(r=>r.model>0&&r.area>0).map(r=>100*(r.area-r.model)/r.model),ab=ch.map(Math.abs);
+ const bins=[['unchanged (< 2%)',ab.filter(x=>x<2).length],['small change (2–10%)',ab.filter(x=>x>=2&&x<10).length],['large change (≥ 10%)',ab.filter(x=>x>=10).length],
+  ['no kidney visible',nk],['cannot assess',ca]];
+ const mxb=Math.max(...bins.map(b=>b[1]),1);
+ el.innerHTML=`<p class="lead">${rv.length} outline${rv.length===1?'':'s'} accepted or corrected${ch.length?`; median change ${ch.length?(medOf(ch)>=0?'+':'')+medOf(ch).toFixed(1):'0'}%`:''}.${todo?` ${todo} image${todo===1?'':'s'} not reviewed yet.`:''}</p>`+
+  bins.map(([l,n])=>`<div class="hbar"><span>${l}</span><span class="track"><i style="width:${100*n/mxb}%"></i></span><b>${n}</b></div>`).join('')})();
+
+// ---------- quality summary
+(function(){const el=document.getElementById('qs'),fc={};R.forEach(r=>(r.flags||'').split(';').map(x=>x.trim()).filter(Boolean).forEach(f=>fc[f]=(fc[f]||0)+1));
+ const dc={};R.forEach(r=>{const d=DEC[r.status]||r.status;dc[d]=(dc[d]||0)+1});
+ const bars=(o,cls)=>{const e=Object.entries(o).sort((a,b)=>b[1]-a[1]),m=Math.max(...e.map(x=>x[1]),1);return e.length?e.map(([l,n])=>`<div class="hbar ${cls}${l==='unreviewed'?' grey':''}"><span>${esc(l.replace('✓ ',''))}</span><span class="track"><i style="width:${100*n/m}%"></i></span><b>${n}</b></div>`).join(''):'<p class="mut">None.</p>'};
+ el.innerHTML=`<h4>Flags</h4>${bars(fc,'flag')}<h4>Review decisions</h4>${bars(dc,'dec')}`})();
+let filt='all',query='',sk=null,sd=1;
+const cols=[['','Original'],['','Outline'],['id','Image'],['well','Well'],['field','Field',1]].concat(R.some(r=>r.cond)?[['cond','Condition']]:[]).concat([['area','Current area (µm²)',1],['src','Area source'],['model','Model area (µm²)',1],['status','Review decision'],['flags','Flags']])
+ .concat(R.some(r=>r.grade||r.elb)?[['grade','Grade (beta)'],['elb','Elbow µm (beta)',1]]:[])
+ .concat(R.some(r=>r.gh||r.em)?[['gh','Grade (yours)'],['em','Elbow measured µm',1]]:[]);
+const HASB=R.some(r=>r.grade||r.elb),HASH=R.some(r=>r.gh||r.em);
+setTimeout(()=>{const n=document.getElementById('betaNote');if(n)n.hidden=!(HASB||HASH)},0);
+function draw(){let rs=R.filter(r=>filt==='all'||(filt==='look'?r.flagged:filt==='todo'?r.status==='auto':r.status!=='auto'));
+ if(query){const t=query.toLowerCase();rs=rs.filter(r=>[r.id,r.well,r.flags,DEC[r.status]].join(' ').toLowerCase().includes(t))}
+ if(sk)rs=[...rs].sort((a,b)=>{const x=a[sk],y=b[sk];return(x>y?1:x<y?-1:0)*sd});
+ let h='<tr>'+cols.map(([k,l,n])=>`<th class="${n?'n':''}" ${k?`data-k="${k}"`:''}>${l}${sk===k&&k?(sd>0?' ▲':' ▼'):''}</th>`).join('')+'</tr>';
+ rs.forEach((r,i)=>{h+=`<tr><td><img class="th" data-i="${i}" src="${r.a}" alt="original" loading="lazy" title="Open larger"></td><td><img class="th" data-i="${i}" src="${r.b}" alt="outline" loading="lazy" title="Open larger"></td>
+  <td><div class="id">${esc(r.id)}</div></td><td>${esc(r.well)}</td><td class="n">${r.field??''}</td>${R.some(x=>x.cond)?`<td>${esc(r.cond||'–')}</td>`:''}
+  <td class="n"><b>${r.area==null?'–':r.area>0?fmt(r.area):'0'}</b></td><td class="mut">${r.src==='model'?'model':r.src==='reviewed'||r.src==='checked'?'reviewed':'–'}</td><td class="n mut">${r.model>0?fmt(r.model):'–'}</td>
+  <td class="d-${r.status}">${DEC[r.status]||esc(r.status)}</td><td class="flag">${esc(r.flags)}</td>`+
+  (HASB?`<td class="beta">${r.grade?esc(r.grade)+(r.gp!=null?` <span class="mut">${Math.round(100*r.gp)}%</span>`:'')+(r.gsure?'':' <span class="mut" title="below the confidence threshold">?</span>'):'–'}</td>
+   <td class="n beta" title="straight (max Feret) · midline">${r.elb!=null?fmt(r.elb):'–'}${r.elbm!=null?`<div class="mut">midline ${fmt(r.elbm)}</div>`:''}</td>`:'')+
+  (HASH?`<td>${esc(r.gh||'–')}</td><td class="n">${r.em!=null?fmt(r.em):'–'}${r.es!=null?`<div class="mut">straight ${fmt(r.es)}</div>`:''}</td>`:'')+`</tr>`});
+ const t=document.getElementById('imgs');t.innerHTML=h;t.querySelectorAll('img.th').forEach(im=>im.onclick=()=>openViewer(rs,+im.dataset.i));document.getElementById('count').textContent=rs.length+' shown';
+ t.querySelectorAll('th[data-k]').forEach(th=>th.onclick=()=>{const k=th.dataset.k;sd=sk===k?-sd:1;sk=k;draw()});
+ document.querySelectorAll('#filt button').forEach(b=>b.classList.toggle('on',b.dataset.f===filt))}
+document.querySelectorAll('#filt button').forEach(b=>b.onclick=()=>{filt=b.dataset.f;draw()});
+document.getElementById('q').oninput=e=>{query=e.target.value;draw()};
+draw();
+// buttons that talk to KidneyCyst only work when the report is opened from the app (not as an e-mailed file)
+const TK=new URLSearchParams(location.search).get('t'), APP=location.protocol.startsWith('http')&&!!TK;
+const post=(p,b)=>fetch(p,{method:'POST',headers:{'X-Token':TK,'Content-Type':'application/json'},body:JSON.stringify(b||{})});
+const SNAP=M.snapshot;
+if(SNAP){const b=document.getElementById('snapbar');b.hidden=false;b.textContent=`Snapshot saved ${SNAP.when} (${SNAP.kind==='final'?'all images reviewed':SNAP.kind==='detected'?'right after detection':'saved by hand'}). This copy does not change; the current report may differ.`}
+if(APP){document.getElementById('tReview').hidden=!!SNAP;document.getElementById('tBack').hidden=false;document.getElementById('tXls').hidden=!!SNAP;document.getElementById('tSnap').hidden=!!SNAP}
+document.getElementById('tSnap').onclick=async()=>{const r=await (await post('/api/snapshot',{})).json();const b=document.getElementById('snapbar');b.hidden=false;
+ b.textContent=r.ok?'Snapshot saved. Find it under Saved runs.':'The snapshot could not be saved: '+(r.error||'')};
+document.getElementById('tBack').onclick=()=>{if(window.opener&&!window.opener.closed){try{window.opener.focus()}catch(e){}window.close()}location.href='/run?t='+TK};
+document.getElementById('tXls').onclick=async()=>{const r=await (await post('/api/open',{what:'table'})).json();if(r.download)location.href=r.download};
+document.getElementById('tPdf').onclick=()=>window.print();
+document.getElementById('tReview').onclick=()=>{location.href='/review?t='+TK};
+if(APP&&!SNAP)document.getElementById('tLayout').hidden=false;
+(function(){const dlg=document.getElementById('lay'),grid=document.getElementById('layGrid');let mode=(M.layout&&M.layout.mode)||'column';
+ const wells=[...new Set(R.map(r=>r.well).filter(Boolean))],cols=[...new Set(wells.map(w=>parseInt(w.slice(1))))].sort((a,b)=>a-b),rows=[...new Set(wells.map(w=>w[0]))].sort();
+ function fill(){const keys=mode==='row'?rows:cols.map(String),lab=(M.layout&&M.layout.mode===mode&&M.layout.labels)||{};
+  grid.innerHTML=keys.map(k=>`<label><span>${mode==='row'?'Row':'Column'} ${k}</span><input type="text" data-k="${k}" value="${esc(lab[k]||'')}" placeholder="e.g. DMSO, 1 µM"></label>`).join('');
+  document.querySelectorAll('#layMode button').forEach(b=>b.classList.toggle('on',b.dataset.m===mode))}
+ document.querySelectorAll('#layMode button').forEach(b=>b.onclick=()=>{mode=b.dataset.m;fill()});
+ document.getElementById('tLayout').onclick=()=>{fill();dlg.hidden=false;const f=grid.querySelector('input');if(f)f.focus()};
+ document.getElementById('layCancel').onclick=()=>{dlg.hidden=true};
+ document.getElementById('laySave').onclick=async()=>{const labels={},order=[];grid.querySelectorAll('input').forEach(i=>{const v=i.value.trim();if(v){labels[i.dataset.k]=v;if(!order.includes(v))order.push(v)}});
+  await post('/api/layout',{layout:{mode,labels,order}});sessionStorage.setItem('kc.scroll',scrollY);location.reload()}})();
+window.addEventListener('beforeprint',()=>{filt='all';query='';document.getElementById('q').value='';draw();document.querySelector('details.how').open=true});
+// keep an open report current: reload when the results change (review in another tab, QuPath import)
+if(APP&&!SNAP){let v0=null;setInterval(async()=>{try{const r=await (await fetch('/api/version?t='+TK)).json();
+ if(v0===null)v0=r.v;else if(r.v!==v0&&!document.activeElement.matches('input')){document.getElementById('updated').hidden=false;
+  sessionStorage.setItem('kc.scroll',scrollY);location.reload()}}catch(e){}},4000);
+ const y=sessionStorage.getItem('kc.scroll');if(y){scrollTo(0,+y);sessionStorage.removeItem('kc.scroll')}}
+</script>
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-labelledby="vTitle"><div class="vbox">
+ <div class="vhead"><div><h3 id="vTitle"></h3><div class="mut" id="vSub"></div></div><button class="vclose" id="vClose" aria-label="Close">×</button></div>
+ <div class="vimgs"><figure><img id="vIn" alt="input image"><figcaption>Input</figcaption></figure><figure><img id="vOut" alt="outline"><figcaption id="vOutCap">Outline</figcaption></figure></div>
+ <div class="vinfo" id="vInfo"></div>
+ <div class="vfoot"><button class="small" id="vPrev">‹ Previous</button><span class="mut" id="vPos"></span><button class="small" id="vNext">Next ›</button>
+  <span style="flex:1"></span><button class="small primary" id="vEdit" hidden>Edit this image</button></div>
+</div></div>
+<script>
+// ---------- image viewer: input + outline side by side, step through the images it was opened from
+let VL=[],VI=0;
+function openViewer(list,i){VL=list;VI=i;showV();document.getElementById('viewer').hidden=false;document.getElementById('vClose').focus()}
+function showV(){const r=VL[VI],$=id=>document.getElementById(id);
+ $('vTitle').textContent=r.well?`Well ${r.well}, field ${r.field??'–'}`:r.id;$('vSub').textContent=[r.id,plateName(plateKey(r))].join(' · ');
+ const big=APP&&!SNAP,u=k=>`/api/view/${encodeURIComponent(r.id)}/${k}.png?t=${TK}&v=${Date.now()}`;
+ $('vIn').src=big?u('in'):r.a;$('vOut').src=big?u('out'):r.b;$('vIn').onerror=()=>{$('vIn').src=r.a};$('vOut').onerror=()=>{$('vOut').src=r.b};
+ $('vOutCap').textContent=r.status==='edited'?'Outline (corrected)':r.area>0?'Outline (model)':'No outline';
+ const rows=[['Current area',r.area==null?'–':r.area>0?fmt(r.area)+' µm²':'no outline'],['Model area',r.model>0?fmt(r.model)+' µm²':'–'],
+  ['Review decision',DEC[r.status]||r.status],['Flags',r.flags||'none']]
+  .concat(r.grade?[['Grade (beta)',r.grade+(r.gp!=null?` ${Math.round(100*r.gp)}%`:'')]]:[]).concat(r.elb!=null?[['Elbow (beta)',fmt(r.elb)+' µm straight']]:[])
+  .concat(r.gh?[['Grade (yours)',r.gh]]:[]).concat(r.em!=null?[['Elbow measured',fmt(r.em)+' µm']]:[]);
+ $('vInfo').innerHTML=rows.map(([k,v])=>`<div><span class="mut">${esc(k)}</span><b>${esc(v)}</b></div>`).join('');
+ $('vPos').textContent=`${VI+1} of ${VL.length}`;$('vPrev').disabled=VI===0;$('vNext').disabled=VI===VL.length-1;
+ $('vEdit').hidden=!(APP&&!SNAP)}
+document.getElementById('vClose').onclick=()=>{document.getElementById('viewer').hidden=true};
+document.getElementById('viewer').onclick=e=>{if(e.target.id==='viewer')document.getElementById('viewer').hidden=true};
+document.getElementById('vPrev').onclick=()=>{if(VI>0){VI--;showV()}};document.getElementById('vNext').onclick=()=>{if(VI<VL.length-1){VI++;showV()}};
+document.getElementById('vEdit').onclick=()=>{location.href=`/review?t=${TK}&img=${encodeURIComponent(VL[VI].id)}`};
+document.addEventListener('keydown',e=>{if(document.getElementById('viewer').hidden)return;
+ if(e.key==='Escape')document.getElementById('viewer').hidden=true;else if(e.key==='ArrowLeft')document.getElementById('vPrev').click();else if(e.key==='ArrowRight')document.getElementById('vNext').click()});
+</script></body></html>

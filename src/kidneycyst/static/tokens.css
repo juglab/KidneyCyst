@@ -1,0 +1,2 @@
+:root{--brandBlue:#075DB8;--detectionOrange:#FF8500;--detectionText:#B64A00;--ink:#17324D;--muted:#536679;--surface:#FFFFFF;--canvas:#F3F7FB;--border:#CAD5E2;--success:#167047;--error:#B42318;--focus:#075DB8;}
+[data-theme="dark"]{--canvas:#111923;--surface:#1B2938;--ink:#E7F0FA;--muted:#ACBDCE;--border:#52677D;--brandBlue:#8CCAFF;--detectionText:#FFB568;--focus:#8CCAFF;}

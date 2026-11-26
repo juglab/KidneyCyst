@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kidneycyst"
+version = "0.1.0"
+description = "Zebrafish pronephros (kidney) outlines from GFP TIFFs: nnU-Net prediction, QC report, QuPath review loop"
+requires-python = ">=3.10"
+dependencies = ["numpy", "pandas", "tifffile", "scikit-image", "scipy", "shapely>=2", "openpyxl", "pillow"]
+
+[project.optional-dependencies]
+predict = ["torch", "nnunetv2==2.8.1"]
+qupath = ["paquo==0.9.0"]
+
+[project.scripts]
+kidneycyst = "kidneycyst.cli:main"
+
+[project.gui-scripts]
+kidneycyst-gui = "kidneycyst.gui:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+kidneycyst = ["report_template.html", "*.json", "static/*", "static/icons/*"]

@@ -1,0 +1,104 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KidneyCyst</title><link rel="icon" href="/static/favicon.png"><link rel="stylesheet" href="/static/style.css"></head>
+<body><main class="start">
+<div class="brand"><img src="/static/mascot.png" alt="KidneyCyst mascot: a zebrafish scientist"><div style="flex:1">
+ <h1>KidneyCyst</h1><p>Pronephros segmentation and area measurement in GFP images of zebrafish larvae.</p></div>
+ <div class="toplinks"><a class="helplink" href="#" id="help"><span class="ic" style="--i:url(/static/icons/help.svg)"></span>Help</a></div></div>
+
+<div class="banner" id="busy" hidden><span id="busyTxt"></span><button class="primary small" id="busyGo">View</button></div>
+
+<section class="panel newpanel">
+ <h2><span class="ic" style="--i:url(/static/icons/import-images.svg)"></span>New analysis</h2>
+ <div class="row"><button class="primary big" id="pick"><span class="ic" style="--i:url(/static/icons/open-project.svg)"></span>Choose image folder…</button>
+  <span class="mut">or paste a folder path</span><span class="row grow"><input type="text" id="pathIn" placeholder="e.g. D:\Opera\Run5\Plate1"><button id="usePath">Open</button></span></div>
+ <p class="mut">TIFF images (.tif, .tiff) with GFP in the first channel, subfolders included. If the folder was analysed before, that run opens.</p>
+ <div class="err" id="err1"></div>
+</section>
+
+<section class="panel runspanel">
+ <div class="runs-head"><h2><span class="ic" style="--i:url(/static/icons/open-project.svg)"></span>Your runs</h2>
+  <input type="text" id="q" placeholder="Search name, folder or status" aria-label="Search runs"><span class="mut" id="count"></span>
+  <button class="quiet small" id="add"><span class="ic" style="--i:url(/static/icons/open-project.svg)"></span>Open existing results…</button>
+  <button class="quiet small" id="scan" title="Add every results folder found inside a folder (for example after reinstalling)">Find results in a folder…</button></div>
+ <div class="tablepanel"><table class="runs" id="runs"></table></div>
+ <p class="note" id="where"></p>
+</section>
+</main>
+<div class="modal" id="modal" hidden><div class="box"><h3 id="mTitle"></h3><div id="mText"></div><div class="row" id="mBtns"></div></div></div>
+<script>
+const T='__TOKEN__';
+const api=(p,b)=>fetch(p,b===undefined?{headers:{'X-Token':T}}:{method:'POST',headers:{'X-Token':T,'Content-Type':'application/json'},body:JSON.stringify(b)}).then(r=>r.json());
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=x=>x==null?'–':Number(x).toLocaleString('en-US',{maximumFractionDigits:0});
+const STATUS={new:['Not detected yet','st-new'],detected:['Detected','st-det'],'in review':['In review','st-rev'],final:['Final','st-fin'],cancelled:['Cancelled','st-can']};
+const KIND={detected:'after detection',final:'all reviewed',manual:'saved by hand'};
+let runs=[],openSnaps=new Set(),REMOTE=false;
+api('/api/remote').then(r=>REMOTE=r.remote).catch(()=>{});
+function modal(title,text,buttons){return new Promise(res=>{$('mTitle').textContent=title;$('mText').innerHTML=text;$('mBtns').innerHTML='';
+ buttons.forEach(([l,v,c])=>{const b=document.createElement('button');b.textContent=l;if(c)b.className=c;b.onclick=()=>{$('modal').hidden=true;res(v)};$('mBtns').appendChild(b)});
+ $('modal').hidden=false;$('mBtns').lastChild.focus()})}
+const withPath=b=>{if(!REMOTE)return b;const p=prompt('Remote test mode: paste the folder path as seen on the server');return p?Object.assign(b,{path:p.trim()}):null};
+const goRun=id=>{location.href=id?`/run?id=${id}&t=${T}`:`/run?t=${T}`};
+
+// ---------------- new analysis
+function opened(r){if(r.cancelled)return;if(r.error){$('err1').textContent=r.error;return}
+ if(!r.results_only&&!r.n_tiffs&&!r.id){$('err1').textContent='No TIFF images found in this folder or its subfolders. Select a folder containing .tif or .tiff images.';return}
+ goRun(r.id)}
+$('pick').onclick=async()=>{$('err1').textContent='';$('pick').disabled=true;try{opened(await api('/api/pick',{}))}finally{$('pick').disabled=false}};
+$('usePath').onclick=async()=>{const p=$('pathIn').value.trim();if(p){$('err1').textContent='';opened(await api('/api/folder',{path:p}))}};
+$('pathIn').onkeydown=e=>{if(e.key==='Enter')$('usePath').click()};
+
+// ---------------- detection running somewhere
+async function busy(){const j=await api('/api/job');$('busy').hidden=!j.running;
+ if(j.running){const name=(runs.find(r=>r.out===j.out)||{}).name||(j.out||'').split(/[\\/]/).pop().replace(/_kidneycyst$/,'');
+  $('busyTxt').innerHTML=`<b>Detection running:</b> ${esc(name)}`+(j.n?` · ${j.i} of ${j.n} images`:'')+(j.where?` · on ${esc(j.where)}`:'');
+  $('busyGo').onclick=()=>goRun('');setTimeout(busy,2000)}else if(!$('busy').hidden)load()}
+
+// ---------------- runs table
+async function load(){const r=await api('/api/library');runs=r.runs;
+ $('where').textContent=`Runs known to this installation: ${r.where}. Removing a run from the list never deletes its files.`;draw()}
+function draw(){const t=$('q').value.toLowerCase();
+ const rs=runs.filter(r=>!t||[r.name,r.out,r.input_folder,(STATUS[r.status]||[''])[0]].join(' ').toLowerCase().includes(t));
+ $('count').textContent=runs.length?`${rs.length} run${rs.length===1?'':'s'}`:'';
+ $('q').hidden=$('count').hidden=runs.length<4;
+ let h='';
+ if(!runs.length)h=`<tr><td class="empty"><b>No runs yet.</b><br>Choose an image folder above to start, or open results you already have.</td></tr>`;
+ else{h='<tr><th>Name</th><th>Date</th><th class="n">Images</th><th>Reviewed</th><th class="n">Median area</th><th>Status</th><th></th></tr>';
+  if(!rs.length)h+='<tr><td colspan="7" class="empty">No run matches the search.</td></tr>'}
+ rs.forEach(r=>{
+  if(!r.exists){h+=`<tr class="missing"><td><b>${esc(r.name)}</b><div class="path">${esc(r.out)}</div></td><td>${esc((r.created||'').slice(0,10))}</td><td colspan="4" class="err">Folder not found (moved, renamed or on a drive that is not connected).</td>
+   <td class="acts2"><button data-a="locate" data-id="${r.id}">Locate…</button><button class="quiet" data-a="remove" data-id="${r.id}">Remove from list</button></td></tr>`;return}
+  const st=STATUS[r.status]||[r.status||'Unknown',''],pct=r.n?Math.round(100*r.reviewed/r.n):0,ns=(r.snapshots||[]).length;
+  h+=`<tr class="run" data-id="${r.id}"><td><b class="name">${esc(r.name)}</b><div class="path">${esc(r.input_folder||r.out)}</div></td>
+   <td>${esc((r.created||'').slice(0,10))}<div class="path">${esc((r.created||'').slice(11,16))}</div></td><td class="n">${r.n??'–'}</td>
+   <td><div class="mini"><span class="progress"><div style="width:${pct}%"></div></span><span>${r.reviewed??0} / ${r.n??0}</span></div></td>
+   <td class="n">${r.median?fmt(r.median)+' µm²':'–'}</td><td><span class="pill ${st[1]}">${st[0]}</span></td>
+   <td class="acts2"><button class="primary" data-a="open" data-id="${r.id}">Open</button>
+    <button class="quiet" data-a="more" data-id="${r.id}" title="Report, snapshots, rename, remove">⋯</button></td></tr>`;
+  if(openSnaps.has(r.id))h+=`<tr class="snaprow"><td colspan="7"><div class="snaps">${ns?r.snapshots.map(s=>`<div class="snap"><span class="pill st-${s.kind}">${esc(KIND[s.kind]||s.kind)}</span><span>${esc(s.when)}</span>
+    <a href="/snapshot?id=${r.id}&f=${encodeURIComponent(s.file)}&t=${T}" target="_blank">Open report</a>${s.xlsx?`<a href="/snapfile?id=${r.id}&f=${encodeURIComponent(s.xlsx)}&t=${T}">Excel table</a>`:''}</div>`).join(''):'<span class="mut">No saved report copies yet.</span>'}</div></td></tr>`});
+ $('runs').innerHTML=h;
+ $('runs').querySelectorAll('button[data-a]').forEach(b=>b.onclick=e=>{e.stopPropagation();act(b.dataset.a,b.dataset.id)});
+ $('runs').querySelectorAll('tr.run').forEach(tr=>tr.ondblclick=()=>act('open',tr.dataset.id))}
+async function renameRun(id){const r=runs.find(x=>x.id===id);
+ const v=await modal('Rename run',`<input type="text" id="newName" value="${esc(r.name)}" style="width:100%;margin-top:6px">`,[['Cancel',null],['Save name','ok','primary']]);
+ if(v){const n=document.getElementById('newName').value.trim();if(n){await api('/api/library',{action:'rename',id,name:n});load()}}}
+async function act(a,id){const r=runs.find(x=>x.id===id);
+ if(a==='open'){const x=await api('/api/library',{action:'open',id});if(x.error)return modal('Cannot open',esc(x.error),[['OK',0]]);goRun(id)}
+ else if(a==='more'){const ns=(r.snapshots||[]).length;
+  const v=await modal(r.name,'Open its report, see the saved report copies, rename the run, or remove it from this list. Removing does not delete any files.',
+   [['Cancel',0],['Remove from list','rm'],['Rename','rn'],[`Report copies (${ns})`,'sn'],['Open report','rep','primary']]);
+  if(v==='rn')renameRun(id);else if(v==='rm'){await api('/api/library',{action:'remove',id});load()}
+  else if(v==='sn'){openSnaps.has(id)?openSnaps.delete(id):openSnaps.add(id);draw()}
+  else if(v==='rep'){const x=await api('/api/library',{action:'open',id});if(x.error)return modal('Cannot open',esc(x.error),[['OK',0]]);window.open('/report?t='+T,'_blank')}}
+ else if(a==='remove'){await api('/api/library',{action:'remove',id});load()}
+ else if(a==='locate'){const b=withPath({action:'locate',id});if(!b)return;const x=await api('/api/library',b);if(x.error)modal('Not a results folder',esc(x.error),[['OK',0]]);load()}}
+$('add').onclick=async()=>{const b=withPath({action:'add'});if(!b)return;const x=await api('/api/library',b);if(x.error)return modal('Not a results folder',esc(x.error),[['OK',0]]);if(!x.cancelled)load()};
+$('scan').onclick=async()=>{const b=withPath({action:'scan'});if(!b)return;const x=await api('/api/library',b);if(x.found!=null)modal('Search finished',`${x.found} results folder${x.found===1?'':'s'} found and added.`,[['OK',0,'primary']]);load()};
+$('q').oninput=draw;
+$('help').onclick=e=>{e.preventDefault();location.href='/help?t='+T};
+setInterval(()=>api('/api/ping',{}),20000);
+load().then(busy);
+window.addEventListener('focus',()=>load().then(busy));
+</script></body></html>

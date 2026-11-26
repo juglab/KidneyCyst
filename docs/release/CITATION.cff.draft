@@ -1,0 +1,32 @@
+# DRAFT: authorship, order and DOI to be agreed before release. Rename to CITATION.cff at release.
+cff-version: 1.2.0
+message: "If you use KidneyCyst, please cite it as below, and also cite nnU-Net."
+title: "KidneyCyst: pronephros segmentation and area measurement in zebrafish larvae"
+version: 0.1.0
+date-released: "TBD"
+license: "MIT (proposed, pending agreement)"
+authors:
+  - family-names: Kukde
+    given-names: Aman
+    affiliation: "Human Technopole"
+  # further authors to be agreed with collaborators (Institut Imagine; supervision: A. Benmerah, F. Jug)
+references:
+  - type: article
+    title: "nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation"
+    authors:
+      - family-names: Isensee
+        given-names: Fabian
+      - family-names: Jaeger
+        given-names: Paul F.
+      - family-names: Kohl
+        given-names: Simon A. A.
+      - family-names: Petersen
+        given-names: Jens
+      - family-names: Maier-Hein
+        given-names: Klaus H.
+    journal: "Nature Methods"
+    volume: 18
+    start: 203
+    end: 211
+    year: 2021
+    doi: 10.1038/s41592-020-01008-z

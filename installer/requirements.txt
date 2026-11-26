@@ -1,0 +1,17 @@
+# tested versions (Linux, 24 Nov 2026); torch is installed separately with --torch-backend=auto
+acvl-utils==0.2.7
+batchgenerators==0.25.6
+batchgeneratorsv2==0.3.8
+blosc2==4.16.1
+dynamic-network-architectures==0.4.4
+imagecodecs==2026.11.11
+nnunetv2==2.8.1
+numpy==2.5.4
+openpyxl==3.1.5
+pandas==3.1.1
+pillow==13.0.0
+scikit-image==0.26.0
+scipy==1.18.1
+shapely==2.2.0
+simpleitk==2.5.8
+tifffile==2026.11.16

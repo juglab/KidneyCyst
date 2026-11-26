@@ -1,0 +1,131 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Help – KidneyCyst</title><link rel="icon" href="/static/favicon.png"><link rel="stylesheet" href="/static/style.css"></head>
+<body><div class="help">
+<nav class="help-nav" aria-label="Help topics">
+ <a class="back" href="#" id="back"><span class="ic" style="--i:url(/static/icons/cyst-marker.svg)"></span>Back to KidneyCyst</a>
+ <a href="#start">Quick start</a><a href="#model">Model &amp; validation</a><a href="#cite">How to cite</a>
+ <a href="#licenses">Licenses &amp; acknowledgments</a><a href="#network">Data &amp; network</a><a href="#problem">Report a problem</a><a href="#about">About</a>
+</nav>
+<main class="help-main">
+
+<section id="start"><h1>Quick start</h1>
+ <ol class="steps">
+  <li><b>New analysis.</b> On the start page, choose a folder containing 2-D TIFF images or z-projections, with GFP in the first channel. Subfolders are included. The run's own page opens; every run you analyse is listed on the start page under <i>Your runs</i>.</li>
+  <li><b>Run detection.</b> KidneyCyst generates candidate pronephros outlines and calculates their areas in µm² using the recorded pixel size.</li>
+  <li><b>Review outlines.</b> Accept an outline with <kbd>A</kbd>, mark no kidney visible with <kbd>N</kbd>, or mark an image as unassessable with <kbd>C</kbd>. Use the brush or lasso to edit an outline, then press <kbd>A</kbd> to save and advance.</li>
+  <li><b>Open results.</b> The Excel table and report are updated after each review decision. Select <i>Open Excel table</i> to view the measurements.</li>
+ </ol>
+ <p>Results are saved beside the input folder in <code>&lt;your folder&gt;_kidneycyst</code>. Source images are not modified.</p>
+ <p>Processing time depends on the device and image size. Fast mode uses one model instead of the three-model ensemble.</p>
+ <p>Sample identifiers are extracted from Opera/Harmony filenames, such as <code>… Well B07, Field 4.tif</code>. Folder names containing <code>Run5</code> or <code>Plate2</code> provide run and plate identifiers.</p>
+ <p>Pixel size is read from TIFF metadata. If unavailable, the app uses 1.19595 µm/pixel and displays a calibration warning. Verify this value before interpreting physical areas; a different value can be entered before running detection.</p>
+</section>
+
+<section id="model"><h1>Model &amp; validation</h1>
+ <p>KidneyCyst segments the pronephros and measures its area. This version does not detect individual cysts or measure cyst features.</p>
+ <table class="kv">
+  <tr><th>Model</th><td id="mVer">KC009-p512-250ep-gfp</td></tr>
+  <tr><th>Method</th><td>nnU-Net v2, trained in 2-D on 512 × 512 pixel patches for 250 epochs. Inference uses sliding windows and mirroring. The default prediction averages three models, each trained with one experimental run held out.</td></tr>
+  <tr><th>Training images</th><td>GFP-channel z-projections of zebrafish larvae at 2 days post-fertilisation, acquired on an Opera Phenix at 1080 × 1080 pixels and 1.196 µm/pixel. Preprocessing uses fixed intensity scaling without per-image normalisation.</td></tr>
+  <tr><th>Training dataset</th><td>686 images from three experimental runs (Runs 2–4), annotated in QuPath by Nikita Toločkovs (Institut Imagine). Blurred images, images without outlines and images with uncertain grades were excluded.</td></tr>
+  <tr><th>Area</th><td>Area is calculated from mask pixel count and pixel area, then divided by 1.02. This is an empirical correction measured on the training data (median ratio of raster-mask pixels to QuPath polygon area); it is not a general conversion.</td></tr>
+ </table>
+ <h2>Validation</h2>
+ <p>Leave-one-run-out cross-validation: each image was evaluated using a single model trained without images from that experimental run. Predicted areas were compared with manual QuPath measurements (n = 686).</p>
+ <table class="data"><tr><th>Images</th><th class="n">n</th><th class="n">Within 10% of manual area</th><th class="n">Within 20%</th><th class="n">Mean abs. error</th><th class="n">ICC</th><th class="n">Dice</th></tr>
+  <tr><td>All</td><td class="n">686</td><td class="n">93.1%</td><td class="n">99.3%</td><td class="n">4.6%</td><td class="n">0.91</td><td class="n">0.940</td></tr>
+  <tr><td>Run 2</td><td class="n">212</td><td class="n">94.3%</td><td class="n">99.1%</td><td class="n">4.3%</td><td class="n">0.92</td><td class="n">0.939</td></tr>
+  <tr><td>Run 3</td><td class="n">202</td><td class="n">89.1%</td><td class="n">98.5%</td><td class="n">5.3%</td><td class="n">0.89</td><td class="n">0.938</td></tr>
+  <tr><td>Run 4</td><td class="n">272</td><td class="n">95.2%</td><td class="n">100%</td><td class="n">4.3%</td><td class="n">0.92</td><td class="n">0.942</td></tr>
+  <tr><td>Images graded with cysts (subgroup)</td><td class="n">68</td><td class="n">86.8%</td><td class="n">97.1%</td><td class="n">5.8%</td><td class="n">0.91</td><td class="n">0.938</td></tr></table>
+ <ul class="notes">
+  <li>Every one of the 686 images received an outline from its held-out model.</li>
+  <li><b>Single model vs. default:</b> these numbers are for single held-out models. The default three-model average has not been validated separately on held-out runs.</li>
+  <li><b>Images graded with cysts</b> is an evaluation subgroup (images whose manual grade includes a cyst). It does not mean that individual cysts are detected.</li>
+  <li><b>Baseline:</b> assigning every image the median area of the training runs (also leave-one-run-out) gives an error within 20% for 81% of images.</li>
+  <li>An independent blinded reader study comparing model-generated and manual outlines is in progress.</li></ul>
+ <h2>Limitations</h2>
+ <ul><li>All training annotations were produced by one annotator. Predictions may reflect that annotator’s boundary conventions.</li>
+  <li>Performance varies between experimental runs. For Run 3, 89% of area estimates were within 10% of the reference measurement.</li>
+  <li>Performance has not been evaluated on other developmental stages, microscopes, magnifications or reporter lines. Validate predictions before using measurements from these inputs.</li>
+  <li>Outlines that reach the image boundary are flagged. Their areas include only the region within the image.</li></ul>
+ <h2 id="beta">Grade and elbow-to-elbow length (beta)</h2>
+ <p><b>Beta: not yet validated against manual grading or manual elbow measurements.</b> Use these values to explore, not to report.</p>
+ <ul><li><b>Grade (beta):</b> normal, unfused or cyst, with its probability, from the shape and GFP signal of the model outline. Grades below 70% probability are marked uncertain (column <code>flag_grade_uncertain</code>; this flag does not change which images are listed as flagged for review).</li>
+  <li><b>Elbow-to-elbow (beta):</b> two candidate definitions from the model outline: <i>straight</i>, the longest straight line across the outline, and <i>midline</i>, the length along the outline's centre line. Elbow length is not annotated in the training data.</li>
+  <li><b>Your measurements:</b> in the review screen, <i>Measure elbow</i> (<kbd>M</kbd>) records points along the tubule from elbow to elbow, and <i>Your grade</i> records your grade. Both are saved with your name and the time, kept when detection is run again, and are the data used to validate the beta values.</li>
+  <li>Held-out accuracy of the beta grade: <span id="gradeAcc">62% balanced accuracy over the 3 grades (leave-one-run-out, 686 images; cyst vs normal AUC 0.83). On images marked confident (about 1 in 3): 75%. Use it to sort images for review, not as a grade.</span></li></ul>
+</section>
+
+<section id="cite"><h1>How to cite</h1>
+ <p class="tbc">The software citation is provisional pending agreement on authorship. A release DOI is not yet available.</p>
+ <div class="cite" id="citeTxt">Kukde A, et al. KidneyCyst: pronephros segmentation and area measurement in zebrafish larvae, version <span class="ver">0.1.0</span> [software]. 2026.</div>
+ <p>Please also cite the nnU-Net method:</p>
+ <div class="cite">Isensee F, Jaeger PF, Kohl SAA, Petersen J, Maier-Hein KH. nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation. <i>Nature Methods</i> 18, 203–211 (2021). doi:10.1038/s41592-020-01008-z</div>
+ <p><button id="copyCite">Copy citations</button> <span class="mut" id="copied"></span></p>
+ <p class="mut">Report the KidneyCyst version, model version and review status of the measurements. Versions are recorded in <code>run_settings.json</code> and the report header; measurement provenance is recorded in the <i>Area source</i> column.</p>
+</section>
+
+<section id="licenses"><h1>Licenses &amp; acknowledgments</h1>
+ <table class="kv"><tr><th>Code license</th><td>MIT proposed; <span class="tbc">not yet approved.</span> Release requires collaborator and institutional agreement and a dependency review.</td></tr>
+  <tr><th>Model weights</th><td><span class="tbc">Redistribution terms have not been agreed.</span></td></tr>
+  <tr><th>Example image</th><td>Provided by Institut Imagine. <span class="tbc">Redistribution terms have not been agreed.</span></td></tr>
+  <tr><th>QuPath integration</th><td>Optional integration installs paquo (GPL-3.0) and JPype (Apache-2.0). QuPath (GPL-3.0) is installed separately if unavailable.</td></tr>
+  <tr><th>Artwork</th><td>The zebrafish mascot was created with an AI image generator. Interface icons were created as vector artwork. Artwork licensing is documented separately from the application code.</td></tr></table>
+ <h2>Funding</h2>
+ <p>Developed within the Cilia-AI Marie Skłodowska-Curie Actions Doctoral Network, Horizon Europe, grant agreement No 101169364. <span class="tbc">The formal funding acknowledgment is pending confirmation.</span></p>
+ <h2>Development</h2>
+ <p>Claude (Anthropic) was used for coding, debugging and documentation assistance.</p>
+ <h2>Third-party software</h2>
+ <p class="mut">Third-party packages installed with KidneyCyst are listed below. License notices are provided in <code>THIRD_PARTY_NOTICES.txt</code> in the installation folder.</p>
+ <table class="data" id="tp"><tr><th>Package</th><th>Version</th><th>License</th></tr></table>
+</section>
+
+<section id="network"><h1>Data &amp; network</h1>
+ <ul><li>Image analysis runs locally. The interface is served at 127.0.0.1 on this computer; KidneyCyst does not upload images, outlines or results.</li>
+  <li>An internet connection is required during installation to download Python, PyTorch and dependencies. Optional QuPath integration downloads paquo and JPype and, if needed, QuPath from GitHub.</li>
+  <li>The application does not perform update checks or send telemetry or crash reports. Model weights are bundled with the installation.</li>
+  <li>Analysis results are saved in the <code>_kidneycyst</code> folder beside the input folder. Application logs are saved in the installation folder.</li></ul>
+</section>
+
+<section id="problem"><h1>Report a problem</h1>
+ <p>Contact <a href="mailto:aman.kukde@fht.org">aman.kukde@fht.org</a>. Include:</p>
+ <ol><li>Steps to reproduce the problem, the expected outcome and what happened. Attach a screenshot if useful.</li>
+  <li><code>kidneycyst_log.txt</code> from the results folder, if available.</li>
+  <li>The diagnostic details below. Check logs and screenshots for information you do not want to share.</li></ol>
+ <pre class="diag" id="diag">Loading…</pre>
+ <p><button id="copyDiag">Copy details</button> <button id="openLog"><span class="ic" style="--i:url(/static/icons/open-project.svg)"></span>Open log folder</button> <span class="mut" id="copied2"></span></p>
+ <h2>Common problems</h2>
+ <table class="kv"><tr><th>No TIFF images found</th><td>Select a folder containing .tif or .tiff images. Subfolders are searched automatically.</td></tr>
+  <tr><th>Slow processing</th><td>Check the processing device on the home screen. CPU processing is slower. Fast mode reduces the number of models used for prediction.</td></tr>
+  <tr><th>Excel table not updated</th><td>Close results.xlsx in Excel. KidneyCyst retries writing it after the next review decision. Check the CSV export for the latest successfully saved results.</td></tr>
+  <tr><th>Interface does not open</th><td>Relaunch KidneyCyst from its application icon. The local server stops five minutes after the last application tab is closed.</td></tr></table>
+</section>
+
+<section id="about"><h1>About</h1>
+ <div class="about"><img src="/static/mascot.png" alt="KidneyCyst mascot: a zebrafish scientist"><div>
+  <p><b>KidneyCyst <span class="ver">0.1.0</span></b><br><span class="mut" id="aboutVer"></span></p>
+  <table class="kv"><tr><th>Software development and model training</th><td>Aman Kukde, Human Technopole</td></tr>
+   <tr><th>Data provision and annotation</th><td>Nikita Toločkovs and colleagues, Institut Imagine</td></tr>
+   <tr><th>Supervision</th><td>Alexandre Benmerah, Florian Jug</td></tr>
+   <tr><th>Funding</th><td>Cilia-AI MSCA Doctoral Network, grant agreement No 101169364</td></tr></table>
+  <p class="tbc">Contributor roles are provisional pending collaborator confirmation.</p></div></div>
+</section>
+</main></div>
+<script>
+const T='__TOKEN__';
+const api=(p,b)=>fetch(p,b===undefined?{headers:{'X-Token':T}}:{method:'POST',headers:{'X-Token':T,'Content-Type':'application/json'},body:JSON.stringify(b)}).then(r=>r.json());
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+$('back').onclick=e=>{e.preventDefault();history.length>1?history.back():location.href='/?t='+T};
+async function copy(text,el){try{await navigator.clipboard.writeText(text);$(el).textContent='Copied.'}catch(e){$(el).textContent='Select the text and copy it.'}}
+$('copyCite').onclick=()=>copy([...document.querySelectorAll('.cite')].map(d=>d.innerText).join('\n\n'),'copied');
+$('copyDiag').onclick=()=>copy($('diag').textContent,'copied2');
+$('openLog').onclick=()=>api('/api/open',{what:'install'});
+(async()=>{const a=await api('/api/about');document.querySelectorAll('.ver').forEach(e=>e.textContent=a.version);
+ if(a.model)$('mVer').textContent=a.model;$('aboutVer').textContent=`Model ${a.model||'KC009-p512-250ep-gfp'}. Python ${a.python}, PyTorch ${a.torch}, nnU-Net ${a.nnunet}.`;
+ $('diag').textContent=Object.entries(a.diagnostics).map(([k,v])=>`${k}: ${v}`).join('\n');
+ $('tp').innerHTML+=a.packages.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.version)}</td><td>${esc(p.license)}</td></tr>`).join('');
+ if(location.hash)document.querySelector(location.hash)?.scrollIntoView()})();
+setInterval(()=>api('/api/ping',{}),20000);
+</script></body></html>

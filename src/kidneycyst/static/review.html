@@ -1,0 +1,395 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Check outlines – KidneyCyst</title><link rel="icon" href="/static/favicon.png"><link rel="stylesheet" href="/static/style.css"></head>
+<body><div class="rv">
+<div class="rv-top">
+ <button class="quiet home-btn" id="home" title="Back to this run's page"><span class="ic" style="--i:url(/static/icons/cyst-marker.svg)"></span>‹ <span id="runName">KidneyCyst</span></button>
+ <span class="title" id="title"></span><span class="where" id="where"></span>
+ <span class="done"><span id="doneTxt"></span><span class="progress"><div id="doneBar"></div></span>
+ <button id="report"><span class="ic" style="--i:url(/static/icons/export-results.svg)"></span>Open report</button>
+ <button class="quiet" id="helpBtn" title="Help (opens in a new tab)"><span class="ic" style="--i:url(/static/icons/help.svg)"></span>Help</button></span>
+</div>
+<div class="rv-main">
+ <aside class="list" aria-label="Images">
+  <select id="filter" aria-label="Which images to show">
+   <option value="todo">Unreviewed</option><option value="look">Flagged images</option><option value="all">All images</option></select>
+  <ul id="ul"></ul>
+  <div class="legend-list"><span><span class="ic mark auto" style="--i:url(/static/icons/unchecked.svg)"></span>unreviewed</span>
+   <span><span class="ic mark flag" style="--i:url(/static/icons/warning.svg)"></span>flagged</span>
+   <span><span class="ic mark accepted" style="--i:url(/static/icons/check.svg)"></span>accepted</span>
+   <span><span class="ic mark edited" style="--i:url(/static/icons/edited.svg)"></span>corrected</span>
+   <span><span class="ic mark deleted" style="--i:url(/static/icons/no-kidney.svg)"></span>no kidney</span>
+   <span><span class="ic mark unusable" style="--i:url(/static/icons/help.svg)"></span>cannot assess</span></div>
+ </aside>
+ <div class="split" id="splitL" title="Drag to change the width"></div>
+ <div class="stage" id="stage">
+  <canvas id="cv" aria-label="Image with outlines"></canvas>
+  <div class="toast" id="toast"><span class="ic" style="--i:url(/static/icons/check.svg)"></span><span id="toastTxt"></span><button id="toastUndo" class="toast-undo" hidden>Undo <kbd>U</kbd></button></div>
+  <div class="legend">
+   <span><i class="ln" style="border-color:#FF8500"></i>Model outline</span>
+   <span><i class="ln" style="border-color:#8CCAFF"></i>Your outline (after editing)</span>
+   <span><i class="ln" style="border-color:#FF8500;border-top-style:dashed"></i>Model outline before your edits</span>
+   <span class="elbleg"><i class="ln" style="border-color:#FF8500;border-top-style:dotted"></i>Model elbow (beta)</span>
+   <span class="elbleg"><i class="ln" style="border-color:#8CCAFF"></i>Your elbow</span>
+  </div>
+  <div class="scale"><div class="bar" id="scaleBar"></div><span id="scaleTxt"></span><span class="zoom" id="zoomTxt"></span></div>
+ </div>
+ <div class="split" id="splitR" title="Drag to change the width"></div>
+ <aside class="side">
+  <div class="decide-box">
+   <div class="flagbox" id="flags" hidden><span class="ic" style="--i:url(/static/icons/warning.svg)"></span><span id="flagTxt"></span></div>
+   <div class="state" id="state"><span class="ic" id="stateIc"></span><span id="stateTxt"></span></div>
+   <div class="area"><span class="mut">Model area</span><span class="n" id="aModel"></span><span class="mut">Current area</span><span class="n" id="aNow"></span><span class="d" id="aDiff"></span></div>
+   <div class="decide">
+    <button class="primary big" id="bOk"><span><span class="ic" style="--i:url(/static/icons/check.svg)"></span><span id="okTxt">Accept &amp; next</span></span><kbd>A</kbd></button>
+    <button id="bNo" title="Record that no kidney is visible in this image"><span><span class="ic" style="--i:url(/static/icons/no-kidney.svg)"></span>No kidney visible</span><kbd>N</kbd></button>
+     <button id="bBad" title="Mark the image as unassessable and exclude its area from summary statistics"><span><span class="ic" style="--i:url(/static/icons/help.svg)"></span>Cannot assess</span><kbd>C</kbd></button>
+    <div class="row two"><button id="bPrev">Previous <kbd>←</kbd></button><button id="bNext" title="Skip this image without recording a review decision">Skip <kbd>→</kbd></button></div>
+   </div>
+   <div class="betabox" id="betaBox">
+    <div class="bh"><span>Grade &amp; elbow</span><span class="tag" title="Not yet validated against manual grading and elbow measurements">beta</span></div>
+    <div class="kv"><span class="mut">Model grade</span><span id="gModel">–</span>
+     <span class="mut">Model elbow</span><span id="eModel">–</span>
+     <span class="mut">Your grade</span><span><select id="gHuman" aria-label="Your grade"><option value="">not set</option><option value="normal">normal</option><option value="unfused">unfused</option><option value="cyst">cyst</option></select></span>
+     <span class="mut">Your elbow</span><span id="eHuman">not measured</span></div>
+    <div class="row betabtns"><button class="small" id="bMeasure"><span class="ic" style="--i:url(/static/icons/measure.svg)"></span>Measure elbow <kbd>M</kbd></button><button class="small quiet" id="bClearElbow" hidden>Clear</button></div>
+    <p class="mut tip" id="measTip" hidden>Click along the tubule from one elbow to the other. Double-click or <kbd>Enter</kbd> to finish; <kbd>Esc</kbd> or <kbd>Z</kbd> removes the last point.</p>
+   </div>
+  </div>
+  <div class="side-scroll">
+   <section class="grp"><h3>Tool</h3>
+    <div class="acts" id="tools">
+    <button class="act on" id="tPan" title="Drag to move the image. Scroll to zoom."><span><span class="ic" style="--i:url(/static/icons/move.svg)"></span>Pan</span><kbd>P</kbd></button>
+    <button class="act" id="tBrush" title="Paint to add to the outline"><span><span class="ic" style="--i:url(/static/icons/brush-mask.svg)"></span>Brush</span><kbd>B</kbd></button>
+    <button class="act" id="tErase" title="Paint to remove from the outline"><span><span class="ic" style="--i:url(/static/icons/erase-mask.svg)"></span>Eraser</span><kbd>E</kbd></button>
+    <button class="act" id="tLasso" title="Draw around a region to add it"><span><span class="ic" style="--i:url(/static/icons/region-select.svg)"></span>Lasso</span><kbd>L</kbd></button>
+    <button class="act" id="tCut" title="Draw around a region to remove it"><span><span class="ic" style="--i:url(/static/icons/region-select.svg)"></span>Lasso cut</span><kbd>K</kbd></button>
+    <button class="act" id="tElbow" title="Click points along the tubule from elbow to elbow (beta)"><span><span class="ic" style="--i:url(/static/icons/measure.svg)"></span>Measure elbow</span><kbd>M</kbd></button>
+    </div>
+    <div class="slider" id="sizeRow" hidden><span>Brush size</span><input type="range" id="size" min="1" max="40" value="6" aria-label="Brush size"><span id="sizeV" class="mut">6 px</span><kbd>[ ]</kbd></div>
+   </section>
+   <section class="grp"><h3>Edit</h3>
+    <div class="acts">
+    <button class="act" id="bUndo" title="Undo the last change"><span><span class="ic" style="--i:url(/static/icons/undo.svg)"></span>Undo</span><kbd>Z</kbd></button>
+    <button class="act" id="bRedo" title="Redo"><span><span class="ic" style="--i:url(/static/icons/redo.svg)"></span>Redo</span><kbd>Y</kbd></button>
+    <button class="act" id="bReset" title="Go back to the model's outline"><span><span class="ic" style="--i:url(/static/icons/run-again.svg)"></span>Restore model outline</span><kbd>R</kbd></button>
+    </div>
+   </section>
+   <section class="grp"><h3>View</h3>
+    <div class="acts">
+    <button class="act" id="bFit" title="Zoom to the outline"><span><span class="ic" style="--i:url(/static/icons/fit-view.svg)"></span>Fit outline</span><kbd>F</kbd></button>
+    <button class="act" id="bAll" title="Show the whole image"><span><span class="ic" style="--i:url(/static/icons/zoom-out.svg)"></span>Fit image</span><kbd>W</kbd></button>
+    <button class="act on" id="bLines" title="Show or hide the outlines"><span><span class="ic" style="--i:url(/static/icons/overlay.svg)"></span>Outlines shown</span><kbd>O</kbd></button>
+    <button class="act on" id="bElbowLines" title="Show or hide the elbow lines (beta)"><span><span class="ic" style="--i:url(/static/icons/measure.svg)"></span>Elbow lines shown</span><kbd>J</kbd></button>
+    <button class="act" id="bOrig" title="Hold to hide everything drawn on the image"><span><span class="ic" style="--i:url(/static/icons/original.svg)"></span>Hide Annotations</span><kbd>H</kbd></button>
+    </div>
+    <div class="slider"><span>Fill opacity</span><input type="range" id="fillOp" min="0" max="100" value="35" aria-label="Fill opacity"><span id="fillV" class="mut">35%</span></div>
+   </section>
+   <button class="quiet" id="bKeys"><span class="ic" style="--i:url(/static/icons/keyboard.svg)"></span>Keyboard shortcuts <kbd>?</kbd></button>
+  </div>
+ </aside>
+</div></div>
+<div class="modal" id="modal" hidden><div class="box"><h3 id="mTitle"></h3><div id="mText"></div><div class="row" id="mBtns"></div></div></div>
+<div class="modal" id="keys" hidden><div class="box"><h3>Keyboard shortcuts</h3>
+ <table class="keytab">
+ <tr><th colspan="2">Decide</th></tr>
+ <tr><td><kbd>A</kbd> or <kbd>Enter</kbd></td><td>Accept the outline or save edits, then advance</td></tr>
+ <tr><td><kbd>N</kbd></td><td>No kidney visible</td></tr><tr><td><kbd>C</kbd></td><td>Mark as cannot assess</td></tr>
+ <tr><td><kbd>→</kbd> <kbd>←</kbd></td><td>Skip / previous image</td></tr>
+ <tr><th colspan="2">Tool</th></tr>
+ <tr><td><kbd>P</kbd></td><td>Pan (start mode). Scroll to zoom.</td></tr>
+ <tr><td><kbd>B</kbd> <kbd>E</kbd></td><td>Brush / eraser</td></tr>
+ <tr><td><kbd>L</kbd> <kbd>K</kbd></td><td>Lasso / lasso cut</td></tr>
+ <tr><td><kbd>[</kbd> <kbd>]</kbd></td><td>Smaller / larger brush</td></tr>
+ <tr><td><kbd>M</kbd></td><td>Measure elbow (beta): click points, double-click or <kbd>Enter</kbd> to finish, <kbd>Esc</kbd> removes a point</td></tr>
+ <tr><th colspan="2">Edit</th></tr>
+ <tr><td><kbd>Z</kbd> <kbd>Y</kbd> <kbd>R</kbd></td><td>Undo / redo / restore model outline</td></tr>
+ <tr><th colspan="2">View</th></tr>
+ <tr><td><kbd>F</kbd> <kbd>W</kbd></td><td>Fit outline / fit image</td></tr>
+ <tr><td><kbd>O</kbd></td><td>Outlines on or off</td></tr>
+ <tr><td><kbd>J</kbd></td><td>Elbow lines on or off (beta)</td></tr>
+ <tr><td>hold <kbd>H</kbd></td><td>Hide annotations</td></tr>
+ <tr><td><kbd>U</kbd></td><td>Undo the last saved decision</td></tr>
+ <tr><td>hold <kbd>Space</kbd></td><td>Pan with any tool</td></tr></table>
+ <div class="row"><button class="primary" onclick="document.getElementById('keys').hidden=true">Close</button></div></div></div>
+
+<script>
+const T='__TOKEN__';
+const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let RUN='',RUNID='',RUNNAME='';
+async function api(p,b){const h={'X-Token':T};if(RUN)h['X-Run']=encodeURIComponent(RUN);
+ const o=b===undefined?{headers:h}:{method:'POST',headers:Object.assign(h,{'Content-Type':'application/json'}),body:JSON.stringify(b)};
+ const r=await fetch(p,o);const j=await r.json();
+ if(r.status===409&&j.other_run){otherRun(j);return new Promise(()=>{})}return j}
+let otherShown=false;
+async function otherRun(j){if(otherShown)return;otherShown=true;
+ const v=await modal('Another run was opened',`${esc(j.current_name||'Another run')} was opened in a different tab, so this review is paused: nothing more is saved here. Unsaved edits on this image are not saved.`,
+  [[`Go to ${j.current_name||'that run'}`,'other'],[`Reopen ${RUNNAME||'this run'}`,'back','primary']]);
+ location.href=v==='other'?(j.current_id?`/run?id=${j.current_id}&t=${T}`:`/?t=${T}`):(RUNID?`/review?id=${RUNID}&t=${T}`:`/?t=${T}`)}
+const runPage=()=>RUNID?`/run?id=${RUNID}&t=${T}`:`/run?t=${T}`;
+const $=id=>document.getElementById(id);
+const fmt=x=>Number(x).toLocaleString('en-US',{maximumFractionDigits:0});
+const icon=n=>`url(/static/icons/${n}.svg)`;
+const STATE={auto:['Unreviewed','unchecked','auto'],accepted:['Reviewed · Outline accepted','check','done'],edited:['Reviewed · Outline corrected','edited','done'],
+ deleted:['Reviewed · No kidney visible','no-kidney','done'],unusable:['Reviewed · Cannot assess','help','done']};
+const MARK={accepted:'check',edited:'edited',deleted:'no-kidney',unusable:'help'};
+const RASTER_BIAS=1.02;
+let all=[],list=[],idx=0,cur=null,exportOk=true;
+let tool='pan',space=false,lines=true,fillOp=.35,orig=false,elbowLines=true,meas=[];
+const isRemove=()=>tool==='erase'||tool==='cut',isBrush=()=>tool==='brush'||tool==='erase',isLasso=()=>tool==='lasso'||tool==='cut';
+let view={s:1,x:0,y:0};
+let undo=[],redo=[],dirty=false,drawing=false,last=null,lasso=[],panning=null,mouse=null;
+const cv=$('cv'),ctx=cv.getContext('2d');
+const fillC=document.createElement('canvas'),fctx=fillC.getContext('2d'),lineC=document.createElement('canvas'),lctx=lineC.getContext('2d');
+
+function modal(title,text,buttons){return new Promise(res=>{$('mTitle').textContent=title;$('mText').innerHTML=text;$('mBtns').innerHTML='';
+ buttons.forEach(([l,v,c])=>{const b=document.createElement('button');b.textContent=l;if(c)b.className=c;b.onclick=()=>{$('modal').hidden=true;res(v)};$('mBtns').appendChild(b)});
+ $('modal').hidden=false;$('mBtns').lastChild.focus()})}
+function toast(t,undo){$('toastTxt').textContent=t;const h=$('toast');$('toastUndo').hidden=!undo;h.classList.add('on');clearTimeout(h._t);
+ h._t=setTimeout(()=>{h.classList.remove('on');$('toastUndo').hidden=true},undo?8000:1500)}
+let lastDecision=null,hist=[];   // undo of the last saved decision; images visited, for Previous
+const label=r=>r.well?`Well ${r.well}, field ${r.field}`:r.id;
+
+// ---------------- list
+async function loadList(){all=await api('/api/images');applyFilter()}
+function applyFilter(keepId){const f=$('filter').value;
+ list=all.filter(r=>f==='all'||(f==='look'?r.flagged:r.status==='auto'));
+ if(!list.length&&f!=='all'){$('filter').value='all';return applyFilter(keepId)}
+ const want=keepId??(cur&&cur.id);const j=list.findIndex(r=>r.id===want);idx=j>=0?j:Math.max(0,Math.min(idx,list.length-1));drawList();updDone()}
+function markOf(r){if(r.status!=='auto')return [MARK[r.status],r.status];return r.flagged?['warning','flag']:['unchecked','auto']}
+function drawList(){$('ul').innerHTML=list.map((r,i)=>{const [ic,cls]=markOf(r);return `<li data-i="${i}" class="${i===idx?'cur':''}" title="${r.id}"><span class="ic mark ${cls}" style="--i:${icon(ic)}"></span>
+ <span class="id">${r.well?r.well+', field '+(r.field??''):r.id}</span><span class="a">${r.area==null?'—':r.area>0?fmt(r.area):'—'}</span>${r.flags&&r.status==='auto'?`<span class="fl">${r.flags}</span>`:''}</li>`}).join('');
+ $('ul').querySelectorAll('li').forEach(li=>li.onclick=()=>go(+li.dataset.i));
+ const c=$('ul').querySelector('.cur');if(c)c.scrollIntoView({block:'nearest'})}
+function updDone(){const n=all.length,d=all.filter(r=>r.status!=='auto').length;$('doneTxt').textContent=`${d} of ${n} reviewed`;$('doneBar').style.width=(100*d/Math.max(n,1))+'%'}
+
+// ---------------- image loading
+function loadImg(url){return new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=rej;im.src=url})}
+function toMask(im){const c=document.createElement('canvas');c.width=im.width;c.height=im.height;const x=c.getContext('2d');x.drawImage(im,0,0);
+ const d=x.getImageData(0,0,c.width,c.height).data,m=new Uint8Array(c.width*c.height);for(let i=0;i<m.length;i++)m[i]=d[i*4]>127?1:0;return m}
+async function show(i){if(cur&&!skipHist&&list[i]&&list[i].id!==cur.id)hist.push(cur.id);skipHist=false;meas=[];
+ if(!list.length)return;idx=Math.max(0,Math.min(i,list.length-1));const r=list[idx];
+ const u=k=>`/api/img/${encodeURIComponent(r.id)}/${k}.png?t=${T}&v=${Date.now()}`;
+ const [g,a,c]=await Promise.all([loadImg(u('gray')),loadImg(u('auto')),loadImg(u('cur'))]);
+ const gc=document.createElement('canvas');gc.width=g.width;gc.height=g.height;gc.getContext('2d').drawImage(g,0,0);
+ cur={id:r.id,W:g.width,H:g.height,gray:gc,auto:toMask(a),mask:toMask(c),row:r};cur.saved=cur.mask.slice();
+ fillC.width=lineC.width=cur.W;fillC.height=lineC.height=cur.H;undo=[];redo=[];dirty=false;
+ $('title').textContent=label(r);$('where').textContent=r.well?r.id:'';
+ $('flags').hidden=!r.flags;$('flagTxt').textContent=r.flags?'Model flags: '+r.flags:'';
+ const hasOutline=cur.mask.some(v=>v)||cur.auto.some(v=>v);$('bFit').disabled=!hasOutline;
+ drawList();fit(hasOutline);rebuild();side()}
+function bbox(m,W,H){let x0=W,y0=H,x1=-1,y1=-1;for(let y=0;y<H;y++){const o=y*W;for(let x=0;x<W;x++)if(m[o+x]){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}}return x1<0?null:[x0,y0,x1,y1]}
+function fit(kidney){const W=cv.clientWidth,H=cv.clientHeight;let b=null;
+ if(kidney){const u=new Uint8Array(cur.mask.length);for(let i=0;i<u.length;i++)u[i]=cur.mask[i]|cur.auto[i];b=bbox(u,cur.W,cur.H)}
+ if(!b)b=[0,0,cur.W-1,cur.H-1];else{const cx=(b[0]+b[2])/2,cy=(b[1]+b[3])/2,s=Math.max(b[2]-b[0],b[3]-b[1],180)*1.6/2;b=[cx-s,cy-s,cx+s,cy+s]}
+ const pad=kidney?1:0.96;const s=pad*Math.min(W/(b[2]-b[0]),H/(b[3]-b[1]));view={s,x:W/2-s*(b[0]+b[2])/2,y:H/2-s*(b[1]+b[3])/2};render()}
+
+// ---------------- overlays (image resolution): a fill layer and a contour layer
+function rebuild(){const {W,H,mask,auto}=cur;const F=fctx.createImageData(W,H),f=F.data,L=lctx.createImageData(W,H),l=L.data;const changed=dirty||!same(mask,auto);
+ // One rule: the fill is exactly what will be measured, in the colour of whose outline it is.
+ // Orange = the model's outline (untouched). Blue = your outline (after any edit); the model's original stays as a dashed orange line.
+ const C=changed?[140,202,255]:[255,133,0];
+ for(let y=0;y<H;y++){for(let x=0;x<W;x++){const i=y*W+x,m=mask[i],a=auto[i];if(!m&&!a)continue;const p=i*4;
+  if(m){f[p]=C[0];f[p+1]=C[1];f[p+2]=C[2];f[p+3]=255}
+  const eM=m&&(x==0||y==0||x==W-1||y==H-1||!mask[i-1]||!mask[i+1]||!mask[i-W]||!mask[i+W]);
+  const eA=changed&&a&&(x==0||y==0||x==W-1||y==H-1||!auto[i-1]||!auto[i+1]||!auto[i-W]||!auto[i+W]);
+  if(eA&&((x+y)>>1)%2===0){l[p]=255;l[p+1]=133;l[p+2]=0;l[p+3]=255}       // model's original: dashed orange
+  if(eM){l[p]=C[0];l[p+1]=C[1];l[p+2]=C[2];l[p+3]=255}}}                    // current outline: solid
+ fctx.putImageData(F,0,0);lctx.putImageData(L,0,0);render()}
+function render(){const dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;
+ if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr)}
+ ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#1B2938';ctx.fillRect(0,0,W,H);if(!cur)return;
+ ctx.save();ctx.translate(view.x,view.y);ctx.scale(view.s,view.s);
+ ctx.fillStyle='#000';ctx.fillRect(0,0,cur.W,cur.H);
+ ctx.imageSmoothingEnabled=view.s<2;ctx.drawImage(cur.gray,0,0);ctx.imageSmoothingEnabled=false;
+ if(!orig){ctx.globalAlpha=fillOp;ctx.drawImage(fillC,0,0);ctx.globalAlpha=1;if(lines)ctx.drawImage(lineC,0,0)}
+ ctx.restore();
+ ctx.strokeStyle='rgba(140,202,255,.35)';ctx.lineWidth=1;ctx.strokeRect(view.x-.5,view.y-.5,cur.W*view.s+1,cur.H*view.s+1);   // image edge
+ // scale bar + zoom
+ const pxum=cur.row.px,targets=[10,20,50,100,200,500];let um=targets.find(t=>t/pxum*view.s>=70)||500;
+ $('scaleBar').style.width=Math.round(um/pxum*view.s)+'px';$('scaleTxt').textContent=`${um} µm`;$('zoomTxt').textContent=`${Math.round(view.s*100)}%`;
+ const rm=isRemove(),col=rm?'#ffffff':'#8CCAFF';
+ if(isLasso()&&lasso.length){ctx.beginPath();lasso.forEach(([x,y],k)=>{const X=view.x+view.s*x,Y=view.y+view.s*y;k?ctx.lineTo(X,Y):ctx.moveTo(X,Y)});
+  ctx.strokeStyle=col;ctx.lineWidth=2;ctx.setLineDash([6,4]);ctx.stroke();ctx.setLineDash([])}
+ if(mouse&&isBrush()&&!space){const r=Math.max(+$('size').value*view.s,3),[mx,my]=mouse;
+  ctx.beginPath();ctx.arc(mx,my,r,0,7);ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.6)';ctx.stroke();ctx.lineWidth=1.5;ctx.strokeStyle=col;if(rm)ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);
+  ctx.beginPath();ctx.moveTo(mx-5,my);ctx.lineTo(mx+5,my);if(!rm){ctx.moveTo(mx,my-5);ctx.lineTo(mx,my+5)}ctx.stroke()}
+ drawElbows()}
+const S=([x,y])=>[view.x+view.s*x,view.y+view.s*y];
+function polyline(pts,color,dash,dots){if(pts.length<1)return;ctx.save();ctx.lineJoin='round';
+ ctx.beginPath();pts.map(S).forEach(([X,Y],k)=>k?ctx.lineTo(X,Y):ctx.moveTo(X,Y));
+ ctx.strokeStyle='rgba(0,0,0,.55)';ctx.lineWidth=4;ctx.setLineDash(dash);ctx.stroke();ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();ctx.setLineDash([]);
+ if(dots)pts.map(S).forEach(([X,Y])=>{ctx.beginPath();ctx.arc(X,Y,3.5,0,7);ctx.fillStyle=color;ctx.fill();ctx.lineWidth=1;ctx.strokeStyle='rgba(0,0,0,.6)';ctx.stroke()});ctx.restore()}
+function parsePts(t){return (t||'').split(';').filter(Boolean).map(p=>p.split(',').map(Number))}
+function drawElbows(){if(!cur||orig)return;const r=cur.row;
+ if(elbowLines){const L=(r.elbow_line||'').split(',').map(Number);if(L.length===4&&L.every(v=>v===v))polyline([[L[0],L[1]],[L[2],L[3]]],'#FF8500',[2,5],true);
+  if(!(tool==='elbow'&&meas.length))polyline(parsePts(r.elbow_points),'#8CCAFF',[],true)}
+ if(tool==='elbow'&&meas.length){const pts=meas.slice();if(mouse){pts.push([(mouse[0]-view.x)/view.s,(mouse[1]-view.y)/view.s])}
+  polyline(pts,'#8CCAFF',[],true);const um=pathUm(meas);
+  if(meas.length>1){const [X,Y]=S(meas[meas.length-1]);ctx.font='600 12px system-ui';ctx.fillStyle='#fff';ctx.strokeStyle='rgba(0,0,0,.7)';ctx.lineWidth=3;
+   const t=`${fmt(um)} µm`;ctx.strokeText(t,X+8,Y-8);ctx.fillText(t,X+8,Y-8)}}}
+function pathUm(p){let d=0;for(let k=1;k<p.length;k++)d+=Math.hypot(p[k][0]-p[k-1][0],p[k][1]-p[k-1][1]);return d*cur.row.px}
+
+// ---------------- side panel
+function areaUm2(m){let n=0;for(const v of m)n+=v;return n*cur.row.px*cur.row.px/RASTER_BIAS}
+function same(a,b){if(a.length!==b.length)return false;for(let i=0;i<a.length;i++)if(a[i]!==b[i])return false;return true}
+function betaSide(){const r=cur.row;const pct=v=>v==null?'':` ${Math.round(100*v)}%`;
+ const top=r.grade_beta?Math.max(r.p_normal??0,r.p_unfused??0,r.p_cyst??0):null;
+ $('gModel').innerHTML=r.grade_beta?`<b>${esc(r.grade_beta)}</b><span class="mut">${pct(top)}</span>`+(r.grade_confident?'':' <span class="mut" title="below the confidence threshold">· uncertain</span>'):'<span class="mut">not available</span>';
+ $('eModel').innerHTML=r.elbow_straight!=null?`${fmt(r.elbow_straight)} µm <span class="mut">straight · ${r.elbow_midline!=null?fmt(r.elbow_midline)+' midline':''}</span>`:'<span class="mut">–</span>';
+ $('gHuman').value=r.grade_human||'';
+ $('eHuman').innerHTML=r.elbow_meas_path!=null?`<b>${fmt(r.elbow_meas_path)} µm</b> <span class="mut">path · ${fmt(r.elbow_meas_straight)} straight</span>`:'<span class="mut">not measured</span>';
+ $('bClearElbow').hidden=r.elbow_meas_path==null;$('measTip').hidden=tool!=='elbow'}
+function side(){const r=cur.row;betaSide();const [txt,ic,cls]=dirty?['Unsaved changes','edited','dirty']:STATE[r.status];
+ $('state').className='state '+cls;$('stateTxt').textContent=txt;$('stateIc').style.setProperty('--i',icon(ic));
+ const now=areaUm2(cur.mask),mod=r.model;$('aModel').textContent=mod>0?fmt(mod)+' µm²':'No outline';$('aNow').textContent=now>0?fmt(now)+' µm²':'No outline';
+ $('aDiff').textContent=mod>0&&now>0&&Math.abs(now-mod)>0.5?`${now>mod?'+':''}${fmt(100*(now-mod)/mod)}% relative to model area`:'';
+ const changed=dirty||!same(cur.mask,cur.auto);
+ $('okTxt').textContent=changed?'Save & next':(cur.auto.some(v=>v)?'Accept & next':'No kidney & next');
+ $('bUndo').disabled=!undo.length;$('bRedo').disabled=!redo.length;$('bReset').disabled=same(cur.mask,cur.auto)}
+
+// ---------------- editing
+function toImg(e){const r=cv.getBoundingClientRect();const sx=e.clientX-r.left,sy=e.clientY-r.top;return [(sx-view.x)/view.s,(sy-view.y)/view.s,sx,sy]}
+function stamp(x,y,val){const R=+$('size').value,{W,H,mask}=cur;for(let yy=Math.max(0,Math.floor(y-R));yy<=Math.min(H-1,Math.ceil(y+R));yy++)
+ for(let xx=Math.max(0,Math.floor(x-R));xx<=Math.min(W-1,Math.ceil(x+R));xx++)if((xx-x)**2+(yy-y)**2<=R*R)mask[yy*W+xx]=val}
+function fillPoly(pts,val){const c=document.createElement('canvas');c.width=cur.W;c.height=cur.H;const x=c.getContext('2d');x.beginPath();
+ pts.forEach(([a,b],k)=>k?x.lineTo(a,b):x.moveTo(a,b));x.closePath();x.fillStyle='#fff';x.fill();
+ const d=x.getImageData(0,0,cur.W,cur.H).data;for(let i=0;i<cur.mask.length;i++)if(d[i*4+3]>127)cur.mask[i]=val}
+function push(){undo.push(cur.mask.slice());if(undo.length>40)undo.shift();redo=[]}
+let raf=0;function later(){if(!raf)raf=requestAnimationFrame(()=>{raf=0;rebuild();side()})}
+cv.addEventListener('pointerdown',e=>{if(!cur)return;cv.setPointerCapture(e.pointerId);const [x,y,sx,sy]=toImg(e);
+ if(space||tool==='pan'||e.button===1){panning=[sx,sy,view.x,view.y];cv.style.cursor='grabbing';return}
+ if(e.button!==0)return;
+ if(tool==='elbow'){const l=meas[meas.length-1];if(!l||Math.hypot(l[0]-x,l[1]-y)*view.s>3)meas.push([x,y]);render();return}
+ push();drawing=true;
+ if(isBrush()){stamp(x,y,isRemove()?0:1);last=[x,y];dirty=true;later()}else{lasso=[[x,y]];render()}});
+cv.addEventListener('pointermove',e=>{if(!cur)return;const [x,y,sx,sy]=toImg(e);mouse=[sx,sy];
+ if(panning){view.x=panning[2]+sx-panning[0];view.y=panning[3]+sy-panning[1];render();return}
+ if(drawing&&isBrush()){const val=isRemove()?0:1,R=+$('size').value,n=Math.ceil(Math.hypot(x-last[0],y-last[1])/Math.max(1,R/2));
+  for(let k=1;k<=n;k++)stamp(last[0]+(x-last[0])*k/n,last[1]+(y-last[1])*k/n,val);last=[x,y];later()}
+ else if(drawing&&isLasso()){lasso.push([x,y]);render()}else render()});
+function endStroke(){if(panning){panning=null;setCursor();return}if(!drawing)return;drawing=false;
+ if(isLasso()){if(lasso.length>2)fillPoly(lasso,isRemove()?0:1);else undo.pop();lasso=[]}
+ dirty=!same(cur.mask,cur.saved);rebuild();side()}
+cv.addEventListener('dblclick',e=>{if(tool==='elbow'){e.preventDefault();finishElbow()}});
+async function finishElbow(){if(meas.length<2){toast('Click at least two points along the tubule.');return}
+ const r=await api('/api/measure',{id:cur.id,points:meas.map(([x,y])=>[+x.toFixed(1),+y.toFixed(1)])});
+ if(r.error){await modal('Could not save the measurement',esc(r.error),[['OK',0]]);return}
+ Object.assign(cur.row,{elbow_points:r.elbow_points_px,elbow_meas_path:r.elbow_measured_path_um,elbow_meas_straight:r.elbow_measured_straight_um,elbow_meas_by:r.elbow_measured_by});
+ meas=[];betaSide();render();toast(`Elbow measured: ${fmt(cur.row.elbow_meas_path)} µm along the tubule.`)}
+$('bClearElbow').onclick=async()=>{const r=await api('/api/measure',{id:cur.id,points:[]});if(r.error)return;
+ Object.assign(cur.row,{elbow_points:'',elbow_meas_path:null,elbow_meas_straight:null});betaSide();render();toast('Elbow measurement removed.')};
+$('gHuman').onchange=async e=>{const r=await api('/api/grade',{id:cur.id,grade:e.target.value});
+ if(r.error){await modal('Could not save the grade',esc(r.error),[['OK',0]]);return}cur.row.grade_human=r.grade_human;toast(r.grade_human?`Your grade saved: ${r.grade_human}.`:'Your grade removed.')};
+$('bMeasure').onclick=()=>setTool('elbow');
+function toggleElbowLines(){elbowLines=!elbowLines;document.querySelectorAll('.elbleg').forEach(x=>x.hidden=!elbowLines);$('bElbowLines').classList.toggle('on',elbowLines);$('bElbowLines').querySelector('span').lastChild.textContent=elbowLines?'Elbow lines shown':'Elbow lines hidden';render()}
+$('bElbowLines').onclick=toggleElbowLines;
+cv.addEventListener('pointerup',endStroke);cv.addEventListener('pointercancel',endStroke);
+cv.addEventListener('pointerleave',()=>{mouse=null;render()});
+cv.addEventListener('wheel',e=>{if(!cur)return;e.preventDefault();const [x,y,sx,sy]=toImg(e);const f=Math.exp(-e.deltaY*(e.ctrlKey?0.01:0.0015));
+ const s=Math.min(40,Math.max(0.1,view.s*f));view={s,x:sx-s*x,y:sy-s*y};render()},{passive:false});
+window.addEventListener('resize',()=>render());
+
+// ---------------- decisions / navigation
+async function maskDataURL(){const c=document.createElement('canvas');c.width=cur.W;c.height=cur.H;const x=c.getContext('2d'),id=x.createImageData(cur.W,cur.H);
+ for(let i=0;i<cur.mask.length;i++){const v=cur.mask[i]?255:0,p=i*4;id.data[p]=id.data[p+1]=id.data[p+2]=v;id.data[p+3]=255}x.putImageData(id,0,0);return c.toDataURL('image/png')}
+async function save(action,quiet){const prev={id:cur.id,status:cur.row.status,mask:cur.saved.slice(),W:cur.W,H:cur.H};
+ const body={id:cur.id,action};if(action==='edited')body.mask=await maskDataURL();
+ const r=await api('/api/decide',body);if(r.error){await modal('Could not save outline',r.error+'<br>Your edits remain on screen. Retry saving before leaving this image.',[['OK',0]]);return null}
+ const row=all.find(a=>a.id===cur.id);row.status=r.status;row.area=r.area;dirty=false;exportOk=r.export_ok!==false;cur.saved=cur.mask.slice();
+ if(!quiet)lastDecision=prev;if(quiet){updDone();return r}
+ if(!exportOk){toast('Saved. Excel table not updated: close results.xlsx.');updDone();return r}
+ toast({accepted:'Outline accepted.',edited:'Outline saved.',deleted:'Marked as no kidney visible.',unusable:'Marked as cannot assess.'}[r.status]||'Saved.',true);
+ updDone();return r}
+async function decide(action){if(!cur)return;if(!await save(action))return;
+ const f=$('filter').value;let j;
+ if(f==='todo'){list=all.filter(x=>x.status==='auto');j=Math.min(idx,list.length-1)}else j=idx+1;
+ drawList();
+ if(!list.length||j<0||j>=list.length){const allDone=!all.some(a=>a.status==='auto');
+  await modal('Review complete for this list',!allDone?'Unreviewed images remain in other lists. Change the filter to continue.':(exportOk?'All images have been reviewed. The results table and report are up to date.':'All images have been reviewed. <b>The Excel table could not be updated</b> (it may be open in Excel). Close it; it is written again at the next save. results.csv is up to date.'),[['OK',0,'primary']]);
+  if(allDone){location.href=runPage();return}
+  if(list.length)show(Math.min(idx,list.length-1));else{$('filter').value='all';applyFilter();show(0)}return}
+ show(j)}
+async function undoLast(){const d=lastDecision;if(!d)return;if(!await leaveOk())return;lastDecision=null;
+ const h=$('toast');h.classList.remove('on');$('toastUndo').hidden=true;
+ let i=list.findIndex(x=>x.id===d.id);if(i<0){applyFilter();i=list.findIndex(x=>x.id===d.id)}
+ if(i<0){$('filter').value='all';applyFilter();i=list.findIndex(x=>x.id===d.id)}
+ await show(i);
+ const body={id:d.id,action:d.status};
+ if(d.status==='edited'){cur.mask=d.mask.slice();body.mask=await maskDataURL()}
+ const r=await api('/api/decide',body);if(r.error){await modal('Could not undo',r.error,[['OK',0]]);return}
+ const row=all.find(a=>a.id===d.id);row.status=r.status;row.area=r.area;exportOk=r.export_ok!==false;
+ await show(list.findIndex(x=>x.id===d.id));drawList();updDone();toast('Decision undone.')}
+$('toastUndo').onclick=undoLast;
+async function leaveOk(){if(!dirty)return true;
+ const v=await modal(`Save changes to ${label(cur.row).replace('Well','well')}?`,'This outline has unsaved changes.',[['Keep editing',0],['Discard changes',1],['Save & continue',2,'primary']]);
+ if(v===2)return !!(await save('edited'));if(v===1){dirty=false;return true}return false}
+async function go(i){if(i===idx&&cur)return;if(i<0||i>=list.length)return;if(await leaveOk())show(i)}
+function okAction(){const changed=dirty||!same(cur.mask,cur.auto);return changed?'edited':(cur.auto.some(v=>v)?'accepted':'deleted')}
+$('bOk').onclick=()=>decide(okAction());
+$('bNo').onclick=()=>decide('deleted');$('bBad').onclick=()=>decide('unusable');
+$('bNext').onclick=()=>go(idx+1);
+$('bPrev').onclick=async()=>{while(hist.length&&cur&&hist[hist.length-1]===cur.id)hist.pop();
+ const id=hist.pop();if(id==null)return go(idx-1);if(!await leaveOk()){hist.push(id);return}
+ let i=list.findIndex(x=>x.id===id);if(i<0){$('filter').value='all';applyFilter();i=list.findIndex(x=>x.id===id)}
+ if(i>=0){skipHist=true;show(i)}};
+let skipHist=false;
+$('bUndo').onclick=()=>{if(tool==='elbow'&&meas.length){meas.pop();render();return}if(undo.length){redo.push(cur.mask);cur.mask=undo.pop();dirty=!same(cur.mask,cur.saved);rebuild();side()}};
+$('bRedo').onclick=()=>{if(redo.length){undo.push(cur.mask);cur.mask=redo.pop();dirty=!same(cur.mask,cur.saved);rebuild();side()}};
+$('bReset').onclick=()=>{push();cur.mask=cur.auto.slice();dirty=!same(cur.mask,cur.saved);rebuild();side()};
+$('bFit').onclick=()=>fit(true);$('bAll').onclick=()=>fit(false);
+function toggleLines(){lines=!lines;$('bLines').classList.toggle('on',lines);$('bLines').querySelector('span').lastChild.textContent=lines?'Outlines shown':'Outlines hidden';render()}
+$('bLines').onclick=toggleLines;
+$('fillOp').oninput=e=>{fillOp=e.target.value/100;$('fillV').textContent=e.target.value+'%';render()};
+const holdOrig=v=>{orig=v;$('bOrig').classList.toggle('on',v);render()};
+$('bOrig').addEventListener('pointerdown',()=>holdOrig(true));['pointerup','pointerleave','pointercancel'].forEach(ev=>$('bOrig').addEventListener(ev,()=>holdOrig(false)));
+$('bKeys').onclick=()=>{$('keys').hidden=false};
+$('filter').onchange=async()=>{if(await leaveOk()){applyFilter();show(idx)}else applyFilter(cur&&cur.id)};
+$('size').oninput=e=>{$('sizeV').textContent=e.target.value+' px';render()};
+function setCursor(){cv.style.cursor=(space||tool==='pan')?'grab':isBrush()?'none':'crosshair'}
+const TOOLS={pan:'tPan',brush:'tBrush',erase:'tErase',lasso:'tLasso',cut:'tCut',elbow:'tElbow'};
+function setTool(v){if(v!=='elbow')meas=[];tool=v;$('measTip').hidden=v!=='elbow';$('bMeasure').classList.toggle('on',v==='elbow');Object.entries(TOOLS).forEach(([k,id])=>$(id).classList.toggle('on',k===v));$('sizeRow').hidden=!isBrush();setCursor();render()}
+Object.entries(TOOLS).forEach(([k,id])=>$(id).onclick=()=>setTool(k));
+$('home').onclick=async()=>{if(await leaveOk())location.href=runPage()};
+$('report').onclick=()=>window.open('/report?t='+T,'_blank');
+$('helpBtn').onclick=()=>window.open('/help?t='+T,'_blank');
+window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
+document.addEventListener('keydown',e=>{if(!$('keys').hidden){if(e.key==='Escape'||e.key==='?')$('keys').hidden=true;return}
+ if(!$('modal').hidden||e.target.tagName==='SELECT'||(e.target.tagName==='INPUT'&&e.target.type==='text'))return;
+ const k=e.key.toLowerCase();
+ if(e.key===' '){space=true;setCursor();e.preventDefault();return}
+ if((e.metaKey||e.ctrlKey)&&k==='z'){(e.shiftKey?$('bRedo'):$('bUndo')).click();e.preventDefault();return}
+ if(e.metaKey||e.ctrlKey||e.altKey)return;
+ if(k==='h'){if(!orig)holdOrig(true);return}
+ if(tool==='elbow'&&meas.length&&(k==='enter'||k==='escape'||k==='backspace'||k==='z')){k==='enter'?finishElbow():(meas.pop(),render());e.preventDefault();return}
+ const act={a:()=>$('bOk').click(),enter:()=>$('bOk').click(),m:()=>setTool('elbow'),j:toggleElbowLines,escape:()=>{if(tool==='elbow')setTool('pan')},n:()=>$('bNo').click(),c:()=>$('bBad').click(),
+  arrowright:()=>$('bNext').click(),arrowleft:()=>$('bPrev').click(),u:()=>undoLast(),
+  p:()=>setTool('pan'),b:()=>setTool('brush'),e:()=>setTool('erase'),l:()=>setTool('lasso'),k:()=>setTool('cut'),
+  z:()=>$('bUndo').click(),y:()=>$('bRedo').click(),r:()=>{if(!$('bReset').disabled)$('bReset').click()},
+  f:()=>{if(!$('bFit').disabled)fit(true)},w:()=>fit(false),o:toggleLines,
+  '[':()=>{const s=$('size');s.value=+s.value-1;s.oninput({target:s})},']':()=>{const s=$('size');s.value=+s.value+1;s.oninput({target:s})},
+  '?':()=>{$('keys').hidden=false}}[e.key==='?'?'?':k];
+ if(act){act();e.preventDefault()}});
+document.addEventListener('keyup',e=>{if(e.key===' '){space=false;setCursor()}if(e.key.toLowerCase()==='h')holdOrig(false)});
+// resizable side panels; widths remembered on this computer
+(function(){const root=document.documentElement,get=k=>{try{return localStorage.getItem(k)}catch(e){return null}},
+ set=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+ const lw=get('kc.lw'),rw=get('kc.rw');if(lw)root.style.setProperty('--lw',lw+'px');if(rw)root.style.setProperty('--rw',rw+'px');
+ function drag(el,varName,key,sign,min,max){el.addEventListener('pointerdown',e=>{e.preventDefault();el.setPointerCapture(e.pointerId);el.classList.add('on');
+  const x0=e.clientX,w0=parseFloat(getComputedStyle(root).getPropertyValue(varName))||(sign>0?240:300);
+  const mv=ev=>{const w=Math.max(min,Math.min(max,w0+sign*(ev.clientX-x0)));root.style.setProperty(varName,w+'px');render()};
+  const up=ev=>{el.removeEventListener('pointermove',mv);el.removeEventListener('pointerup',up);el.classList.remove('on');
+   set(key,parseFloat(getComputedStyle(root).getPropertyValue(varName)))};
+  el.addEventListener('pointermove',mv);el.addEventListener('pointerup',up)});
+  el.addEventListener('dblclick',()=>{root.style.removeProperty(varName);set(key,'');render()})}
+ drag($('splitL'),'--lw','kc.lw',1,170,460);drag($('splitR'),'--rw','kc.rw',-1,240,520)})();
+setCursor();
+setInterval(()=>api('/api/ping',{}),20000);
+(async()=>{const i=await fetch('/api/run-info',{headers:{'X-Token':T}}).then(r=>r.json());
+ if(!i.open){location.replace('/?t='+T);return}
+ RUN=i.out;RUNID=i.id||'';RUNNAME=i.name||'';$('runName').textContent=RUNNAME||'Back';document.title=`Check outlines – ${RUNNAME} – KidneyCyst`;
+ if(RUNID&&!new URLSearchParams(location.search).get('id'))history.replaceState(null,'',`/review?id=${RUNID}&t=${T}`+(new URLSearchParams(location.search).get('img')?`&img=${encodeURIComponent(new URLSearchParams(location.search).get('img'))}`:''));
+ await loadList();
+ const want=new URLSearchParams(location.search).get('img');   // opened from the report: go straight to that image
+ if(want){$('filter').value='all';applyFilter();const j=list.findIndex(r=>r.id===want);if(j>=0){show(j);return}}
+ if(!list.length){$('title').textContent='No results available. Run detection to begin review.';return}show(0)})();
+</script></body></html>
