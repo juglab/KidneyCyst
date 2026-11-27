@@ -48,6 +48,7 @@ Your images are never changed. The results go into a new folder next to them, na
 | Right-drag, or **Shift**-drag | Erase. **E** switches between paint and erase; **[** and **]** change the brush size. |
 | **Z** / **R** | Undo the last stroke / go back to the computer's outline. |
 | **F** / **H** | Whole image or zoom / hide the outline to see the bare image. |
+| **I** | Brightness & contrast: a floating panel like Fiji's (histogram, minimum/maximum, brightness, contrast, gamma, colours, *Auto*, *Reset*). It changes only how the image looks, never the outline or the area. Tick *Keep these settings for every image* to use the same display for the whole plate. |
 
 **Grade and elbow length (beta).** The panel on the right also shows the model's grade (normal / unfused / cyst, with
 its probability) and two elbow-to-elbow lengths. They are **beta: not yet checked against manual grading**. To record

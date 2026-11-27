@@ -295,6 +295,8 @@
 `rv.view.outlines.off` Outlines hidden `[O]`
 `rv.view.original` Hide Annotations `[H]` (hold)
 `rv.view.fill` Fill opacity
+`rv.view.bc` Brightness & contrast `[I]`: opens a floating panel over the image (drag its title bar to move it)
+`rv.bc.*` Histogram (drag the lines; drag between them to move both) · Minimum · Maximum · Brightness · Contrast · Gamma · Colours (Grey, Green, Fire, Inverted) · Log histogram · Keep these settings for every image · Auto (click again for more contrast) · Reset · note: "Changes only how the image looks. Outlines and measurements are not affected." · when closed with a non-standard display, the scale box shows "display adjusted"
 `rv.keys.button` Keyboard shortcuts `[?]`
 `rv.split.tooltip` Drag to change the width *(tooltip on the two panel edges; double-click resets)*
 
@@ -303,7 +305,7 @@
 `rv.keys.decide` Decide: `[A]`/`[Enter]` accept or save edits, then advance · `[N]` no kidney visible · `[C]` cannot assess · `[→]` `[←]` skip / previous image
 `rv.keys.tool` Tool: `[P]` pan (start mode; scroll to zoom) · `[B]` `[E]` brush / eraser · `[L]` `[K]` lasso / lasso cut · `[` `]` smaller / larger brush
 `rv.keys.edit` Edit: `[Z]` `[Y]` `[R]` undo / redo / restore model outline
-`rv.keys.view` View: `[F]` `[W]` fit outline / fit image · `[O]` outlines on or off · hold `[H]` hide annotations · hold `[Space]` pan with any tool
+`rv.keys.view` View: `[F]` `[W]` fit outline / fit image · `[O]` outlines on or off · hold `[H]` hide annotations · `[I]` brightness & contrast · hold `[Space]` pan with any tool
 `rv.keys.close` Close
 
 ### Messages on the review screen

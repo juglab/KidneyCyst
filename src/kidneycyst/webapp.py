@@ -213,6 +213,7 @@ def _open_run(rid: str) -> bool:
     STATE["out"] = e["out"]
     STATE["sessions"].pop(e["out"], None)
     _gray_png.cache_clear()
+    _raw_bin.cache_clear()
     inp = e.get("input_folder", "")
     STATE["folder"] = inp if inp and Path(inp).is_dir() else ""
     LIB.register(Path(e["out"]))
@@ -284,6 +285,31 @@ def _gray_png(out: str, iid: str) -> bytes:
     b = io.BytesIO()
     Image.fromarray(g).save(b, format="PNG", compress_level=1)
     return b.getvalue()
+
+
+@lru_cache(maxsize=4)
+def _raw_bin(out: str, iid: str) -> tuple[bytes, dict]:
+    """Raw intensities for the brightness & contrast panel: uint16 little-endian, row-major.
+    Images that are not 0..65535 integers are mapped linearly; X-Offset/X-Scale give the original value
+    (value = offset + stored * scale) so the panel can show the image's own units."""
+    from .cli import read_gfp
+    s = _session(out)
+    r = s.df.loc[iid]
+    a = read_gfp(s.in_root / r["image"], int(s.settings.get("channel", 0)))
+    off, sc = 0.0, 1.0
+    if a.dtype.kind in "ub" and a.dtype.itemsize <= 2:
+        u = a.astype("<u2")
+    else:
+        f = a.astype(np.float64)
+        lo, hi = float(np.nanmin(f)), float(np.nanmax(f))
+        if a.dtype.kind in "iu" and lo >= 0 and hi <= 65535:
+            u = f.astype("<u2")
+        else:
+            off, sc = lo, max(hi - lo, 1e-12) / 65535
+            u = np.round((np.nan_to_num(f, nan=lo) - lo) / sc).astype("<u2")
+    h, w = u.shape
+    return np.ascontiguousarray(u).tobytes(), {"X-W": str(w), "X-H": str(h), "X-Offset": repr(off), "X-Scale": repr(sc),
+                                               "X-Dtype": str(a.dtype)}
 
 
 def _mask_png(m: np.ndarray) -> bytes:
@@ -422,6 +448,7 @@ def start_run(folder: Path, fast: bool, force: bool, pixel_size: float | None = 
         JOB.log.clear()
     STATE["sessions"].pop(str(out), None)
     _gray_png.cache_clear()
+    _raw_bin.cache_clear()
 
     def work():
         old = sys.stdout, sys.stderr
@@ -573,6 +600,10 @@ class H(BaseHTTPRequestHandler):
             if m:                                  # report viewer: sharp crop at native resolution, current outline
                 return self._send(200, _view_png(STATE["out"], unquote(m.group(1)), m.group(2)), "image/png",
                                   {"Cache-Control": "no-store"})
+            m = re.match(r"^/api/img/([^/]+)/raw\.bin$", p)
+            if m:                                  # brightness & contrast panel: raw intensities
+                data, hdr = _raw_bin(STATE["out"], unquote(m.group(1)))
+                return self._send(200, data, "application/octet-stream", hdr)
             m = re.match(r"^/api/img/([^/]+)/(gray|auto|cur)\.png$", p)
             if m:
                 iid, kind = unquote(m.group(1)), m.group(2)
@@ -789,6 +820,7 @@ class H(BaseHTTPRequestHandler):
         STATE["out"] = str(out) if _has_results(out) else ""
         STATE["sessions"].pop(str(out), None)
         _gray_png.cache_clear()
+        _raw_bin.cache_clear()
         rid = ""
         if STATE["out"]:
             from . import library as LIB

@@ -31,7 +31,22 @@
    <span class="elbleg"><i class="ln" style="border-color:#FF8500;border-top-style:dotted"></i>Model elbow (beta)</span>
    <span class="elbleg"><i class="ln" style="border-color:#8CCAFF"></i>Your elbow</span>
   </div>
-  <div class="scale"><div class="bar" id="scaleBar"></div><span id="scaleTxt"></span><span class="zoom" id="zoomTxt"></span></div>
+  <div class="scale"><div class="bar" id="scaleBar"></div><span id="scaleTxt"></span><span class="zoom" id="zoomTxt"></span><span class="bctag" id="bcTag" hidden>display adjusted</span></div>
+  <div class="bc" id="bc" hidden role="dialog" aria-label="Brightness and contrast">
+   <div class="bc-h" id="bcHead" title="Drag to move. Double-click to put it back."><span>Brightness &amp; contrast</span><button class="bc-x" id="bcClose" title="Close (I)" aria-label="Close">×</button></div>
+   <canvas id="bcHist" aria-label="Intensity histogram. Drag the lines to set the display range."></canvas>
+   <div class="bc-ax"><span id="bcLo"></span><span class="bc-load" id="bcLoad"></span><span id="bcHi"></span></div>
+   <div class="bc-s"><label for="bcMin">Minimum</label><input type="range" id="bcMin" min="0" max="1000"><input type="number" id="bcMinN" aria-label="Minimum value"></div>
+   <div class="bc-s"><label for="bcMax">Maximum</label><input type="range" id="bcMax" min="0" max="1000"><input type="number" id="bcMaxN" aria-label="Maximum value"></div>
+   <div class="bc-s"><label for="bcBri">Brightness</label><input type="range" id="bcBri" min="0" max="1000"><span></span></div>
+   <div class="bc-s"><label for="bcCon">Contrast</label><input type="range" id="bcCon" min="0" max="1000"><span></span></div>
+   <div class="bc-s"><label for="bcGam" title="Double-click the slider for 1.00">Gamma</label><input type="range" id="bcGam" min="-100" max="100" value="0"><span id="bcGamV">1.00</span></div>
+   <div class="bc-o"><label>Colours <select id="bcLut"><option value="gray">Grey</option><option value="green">Green</option><option value="fire">Fire</option><option value="inv">Inverted</option></select></label>
+    <label><input type="checkbox" id="bcLog" checked> Log histogram</label></div>
+   <label class="bc-keep"><input type="checkbox" id="bcKeep"> Keep these settings for every image</label>
+   <div class="bc-b"><button id="bcAuto" title="Stretch to this image's intensities. Click again for more contrast.">Auto</button><button id="bcReset" title="Back to the standard display">Reset</button></div>
+   <p class="bc-n">Changes only how the image looks. Outlines and measurements are not affected.</p>
+  </div>
  </div>
  <div class="split" id="splitR" title="Drag to change the width"></div>
  <aside class="side">
@@ -80,6 +95,7 @@
     <button class="act" id="bAll" title="Show the whole image"><span><span class="ic" style="--i:url(/static/icons/zoom-out.svg)"></span>Fit image</span><kbd>W</kbd></button>
     <button class="act on" id="bLines" title="Show or hide the outlines"><span><span class="ic" style="--i:url(/static/icons/overlay.svg)"></span>Outlines shown</span><kbd>O</kbd></button>
     <button class="act on" id="bElbowLines" title="Show or hide the elbow lines (beta)"><span><span class="ic" style="--i:url(/static/icons/measure.svg)"></span>Elbow lines shown</span><kbd>J</kbd></button>
+    <button class="act" id="bBC" title="Floating brightness &amp; contrast panel"><span><span class="ic" style="--i:url(/static/icons/contrast.svg)"></span>Brightness &amp; contrast</span><kbd>I</kbd></button>
     <button class="act" id="bOrig" title="Hold to hide everything drawn on the image"><span><span class="ic" style="--i:url(/static/icons/original.svg)"></span>Hide Annotations</span><kbd>H</kbd></button>
     </div>
     <div class="slider"><span>Fill opacity</span><input type="range" id="fillOp" min="0" max="100" value="35" aria-label="Fill opacity"><span id="fillV" class="mut">35%</span></div>
@@ -108,6 +124,7 @@
  <tr><td><kbd>O</kbd></td><td>Outlines on or off</td></tr>
  <tr><td><kbd>J</kbd></td><td>Elbow lines on or off (beta)</td></tr>
  <tr><td>hold <kbd>H</kbd></td><td>Hide annotations</td></tr>
+ <tr><td><kbd>I</kbd></td><td>Brightness &amp; contrast panel</td></tr>
  <tr><td><kbd>U</kbd></td><td>Undo the last saved decision</td></tr>
  <tr><td>hold <kbd>Space</kbd></td><td>Pan with any tool</td></tr></table>
  <div class="row"><button class="primary" onclick="document.getElementById('keys').hidden=true">Close</button></div></div></div>
@@ -176,7 +193,7 @@ async function show(i){if(cur&&!skipHist&&list[i]&&list[i].id!==cur.id)hist.push
  $('title').textContent=label(r);$('where').textContent=r.well?r.id:'';
  $('flags').hidden=!r.flags;$('flagTxt').textContent=r.flags?'Model flags: '+r.flags:'';
  const hasOutline=cur.mask.some(v=>v)||cur.auto.some(v=>v);$('bFit').disabled=!hasOutline;
- drawList();fit(hasOutline);rebuild();side()}
+ drawList();fit(hasOutline);rebuild();side();bcImage()}
 function bbox(m,W,H){let x0=W,y0=H,x1=-1,y1=-1;for(let y=0;y<H;y++){const o=y*W;for(let x=0;x<W;x++)if(m[o+x]){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}}return x1<0?null:[x0,y0,x1,y1]}
 function fit(kidney){const W=cv.clientWidth,H=cv.clientHeight;let b=null;
  if(kidney){const u=new Uint8Array(cur.mask.length);for(let i=0;i<u.length;i++)u[i]=cur.mask[i]|cur.auto[i];b=bbox(u,cur.W,cur.H)}
@@ -354,14 +371,15 @@ $('report').onclick=()=>window.open('/report?t='+T,'_blank');
 $('helpBtn').onclick=()=>window.open('/help?t='+T,'_blank');
 window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
 document.addEventListener('keydown',e=>{if(!$('keys').hidden){if(e.key==='Escape'||e.key==='?')$('keys').hidden=true;return}
- if(!$('modal').hidden||e.target.tagName==='SELECT'||(e.target.tagName==='INPUT'&&e.target.type==='text'))return;
+ if(!$('modal').hidden||e.target.tagName==='SELECT'||(e.target.tagName==='INPUT'&&(e.target.type==='text'||e.target.type==='number')))return;
+ if(e.target.tagName==='INPUT'&&e.target.type==='range'&&e.key.startsWith('Arrow'))return;
  const k=e.key.toLowerCase();
  if(e.key===' '){space=true;setCursor();e.preventDefault();return}
  if((e.metaKey||e.ctrlKey)&&k==='z'){(e.shiftKey?$('bRedo'):$('bUndo')).click();e.preventDefault();return}
  if(e.metaKey||e.ctrlKey||e.altKey)return;
  if(k==='h'){if(!orig)holdOrig(true);return}
  if(tool==='elbow'&&meas.length&&(k==='enter'||k==='escape'||k==='backspace'||k==='z')){k==='enter'?finishElbow():(meas.pop(),render());e.preventDefault();return}
- const act={a:()=>$('bOk').click(),enter:()=>$('bOk').click(),m:()=>setTool('elbow'),j:toggleElbowLines,escape:()=>{if(tool==='elbow')setTool('pan')},n:()=>$('bNo').click(),c:()=>$('bBad').click(),
+ const act={i:()=>bcToggle(),a:()=>$('bOk').click(),enter:()=>$('bOk').click(),m:()=>setTool('elbow'),j:toggleElbowLines,escape:()=>{if(tool==='elbow')setTool('pan')},n:()=>$('bNo').click(),c:()=>$('bBad').click(),
   arrowright:()=>$('bNext').click(),arrowleft:()=>$('bPrev').click(),u:()=>undoLast(),
   p:()=>setTool('pan'),b:()=>setTool('brush'),e:()=>setTool('erase'),l:()=>setTool('lasso'),k:()=>setTool('cut'),
   z:()=>$('bUndo').click(),y:()=>$('bRedo').click(),r:()=>{if(!$('bReset').disabled)$('bReset').click()},
@@ -382,6 +400,127 @@ document.addEventListener('keyup',e=>{if(e.key===' '){space=false;setCursor()}if
   el.addEventListener('pointermove',mv);el.addEventListener('pointerup',up)});
   el.addEventListener('dblclick',()=>{root.style.removeProperty(varName);set(key,'');render()})}
  drag($('splitL'),'--lw','kc.lw',1,170,460);drag($('splitR'),'--rw','kc.rw',-1,240,520)})();
+// ---------------- brightness & contrast (display only; like Fiji's B&C, floating over the image)
+// Works on the raw intensities (/api/img/<id>/raw.bin); min/max are in the image's own units.
+const BC={open:false,keep:false,custom:false,lut:'gray',log:true,min:0,max:1,gam:1,autoT:0,raw:null,loading:null,pend:0};
+const bcGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},bcSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+async function bcLoad(id){if(BC.raw&&BC.raw.id===id)return BC.raw;if(BC.loading&&BC.loading.id===id)return BC.loading.p;
+ $('bcLoad').textContent='loading…';
+ const p=(async()=>{const h={'X-Token':T};if(RUN)h['X-Run']=encodeURIComponent(RUN);
+  const r=await fetch(`/api/img/${encodeURIComponent(id)}/raw.bin?t=${T}`,{headers:h});if(!r.ok)throw new Error('raw '+r.status);
+  const W=+r.headers.get('X-W'),H=+r.headers.get('X-H'),off=+r.headers.get('X-Offset')||0,sc=+r.headers.get('X-Scale')||1;
+  const d=new Uint16Array(await r.arrayBuffer());
+  const full=new Uint32Array(65536),sub=new Uint32Array(65536);let lo=65535,hi=0;
+  for(let y=0;y<H;y++){const o=y*W,ev=!(y&1);for(let x=0;x<W;x++){const v=d[o+x];full[v]++;if(v<lo)lo=v;if(v>hi)hi=v;if(ev&&!(x&1))sub[v]++}}
+  // standard display = the same 0.5 / 99.95 percentile stretch the app uses (cli._display)
+  const pct=(hist,q)=>{let n=0;for(const c of hist)n+=c;const t=q/100*(n-1);let a=0;for(let v=0;v<65536;v++){a+=hist[v];if(a>t)return v}return 65535};
+  const real=v=>off+v*sc;
+  const R={id,W,H,off,sc,d,full,lo:real(lo),hi:real(hi===lo?lo+1:hi),slo:lo,shi:hi===lo?lo+1:hi,
+   dflt:[real(pct(sub,0.5)),real(pct(sub,99.95))],int:sc===1&&off===0};
+  if(R.dflt[1]<=R.dflt[0])R.dflt[1]=R.dflt[0]+Math.max(sc,1);
+  // 256-bin histogram over the image's own range, for drawing and Auto
+  R.h=new Float64Array(256);const span=R.shi-R.slo;for(let v=R.slo;v<=R.shi;v++)if(full[v])R.h[Math.min(255,Math.floor((v-R.slo)/span*256))]+=full[v];
+  return R})();
+ BC.loading={id,p};try{const R=await p;if(cur&&cur.id===id)BC.raw=R;return R}finally{if(BC.loading&&BC.loading.id===id)BC.loading=null;$('bcLoad').textContent=''}}
+const bcActive=()=>BC.open||BC.keep||BC.custom||BC.lut!=='gray';
+const FIRE=[[0,0,0],[0,0,120],[85,0,180],[160,0,150],[215,30,60],[250,100,0],[255,180,0],[255,235,90],[255,255,255]];
+function bcColour(t){if(BC.lut==='gray'){const y=t*255;return [y,y,y]}if(BC.lut==='inv'){const y=255-t*255;return [y,y,y]}
+ if(BC.lut==='green')return [0,t*255,0];const f=t*(FIRE.length-1),i=Math.min(FIRE.length-2,Math.floor(f)),u=f-i;return FIRE[i].map((c,k)=>c+(FIRE[i+1][k]-c)*u)}
+function bcPaint(){const R=BC.raw;if(!cur||!R||R.id!==cur.id)return;
+ const lut=new Uint32Array(65536),w=Math.max(BC.max-BC.min,1e-9);
+ for(let v=R.slo;v<=R.shi;v++){if(!R.full[v])continue;let t=(R.off+v*R.sc-BC.min)/w;t=t<0?0:t>1?1:t;if(BC.gam!==1)t=Math.pow(t,BC.gam);
+  const [r,g,b]=bcColour(t);lut[v]=(255<<24)|(Math.round(b)<<16)|(Math.round(g)<<8)|Math.round(r)}
+ const x=cur.gray.getContext('2d'),im=x.createImageData(R.W,R.H),o=new Uint32Array(im.data.buffer),d=R.d;
+ for(let i=0;i<d.length;i++)o[i]=lut[d[i]];x.putImageData(im,0,0);render()}
+// put back the plain image the server made (no raw needed)
+async function bcPlain(){if(!cur)return;const id=cur.id;const g=await loadImg(`/api/img/${encodeURIComponent(id)}/gray.png?t=${T}`);
+ if(cur&&cur.id===id&&!bcActive()){cur.gray.getContext('2d').drawImage(g,0,0);render()}}
+function bcDraw(){const c=$('bcHist'),dpr=window.devicePixelRatio||1,Wc=c.clientWidth,Hc=c.clientHeight;
+ if(c.width!==Math.round(Wc*dpr)){c.width=Math.round(Wc*dpr);c.height=Math.round(Hc*dpr)}
+ const x=c.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,Wc,Hc);const R=BC.raw;
+ const hh=Hc-10;x.fillStyle='#0E1620';x.fillRect(0,0,Wc,hh);
+ if(!R||!cur||R.id!==cur.id){$('bcLo').textContent=$('bcHi').textContent='';return}
+ const [A0,A1]=bcAx(),hb=new Float64Array(128);for(let v=R.slo;v<=R.shi;v++){if(!R.full[v])continue;const t=(R.off+v*R.sc-A0)/(A1-A0);if(t>=0&&t<=1)hb[Math.min(127,Math.floor(t*128))]+=R.full[v]}
+ const f=v=>BC.log?Math.log1p(v):v;let m=0;for(let i=0;i<128;i++)m=Math.max(m,f(hb[i]));
+ x.fillStyle='#7D8FA3';for(let i=0;i<128;i++){const bh=m?f(hb[i])/m*(hh-4):0;x.fillRect(i/128*Wc,hh-bh,Wc/128+.5,bh)}
+ const X=v=>(v-A0)/(A1-A0)*Wc;
+ // colour strip = what each intensity becomes
+ for(let i=0;i<Wc;i++){const v=A0+(i+.5)/Wc*(A1-A0);let t=(v-BC.min)/Math.max(BC.max-BC.min,1e-9);t=t<0?0:t>1?1:t;if(BC.gam!==1)t=Math.pow(t,BC.gam);
+  const [r,g,b]=bcColour(t);x.fillStyle=`rgb(${r|0},${g|0},${b|0})`;x.fillRect(i,hh+2,1,8)}
+ // transfer curve
+ x.strokeStyle='#FF8500';x.lineWidth=1.5;x.beginPath();for(let i=0;i<=Wc;i+=2){const v=A0+i/Wc*(A1-A0);let t=(v-BC.min)/Math.max(BC.max-BC.min,1e-9);
+  t=t<0?0:t>1?1:t;if(BC.gam!==1)t=Math.pow(t,BC.gam);const y=hh-2-t*(hh-6);i?x.lineTo(i,y):x.moveTo(i,y)}x.stroke();
+ x.strokeStyle='#8CCAFF';x.lineWidth=1.5;x.setLineDash([3,3]);[BC.min,BC.max].forEach(v=>{const p=Math.round(X(v))+.5;x.beginPath();x.moveTo(p,0);x.lineTo(p,hh);x.stroke()});x.setLineDash([]);
+ $('bcLo').textContent=bcFmt(A0);$('bcHi').textContent=bcFmt(A1)+(A1<R.hi?` (brightest ${bcFmt(R.hi)})`:'')}
+// histogram/slider axis: image minimum .. ~2x the standard display range (Fiji uses the full range, which squeezes the useful part)
+const bcAx=()=>{const R=BC.raw;const a=Math.min(R.hi,R.lo+2*(R.dflt[1]-R.lo));return [Math.min(R.lo,BC.min),Math.max(a,BC.max)]};
+const bcFmt=v=>{const R=BC.raw;return R&&R.int?String(Math.round(v)):(+v).toPrecision(4)};
+function bcSync(){const R=BC.raw;bcDraw();$('bcTag').hidden=!(BC.custom||BC.lut!=='gray')||BC.open;
+ $('bcGamV').textContent=BC.gam.toFixed(2);$('bcGam').value=Math.round(Math.log2(BC.gam)*50);
+ if(!R)return;const [A0,A1]=bcAx(),span=A1-A0,P=v=>Math.round((v-A0)/span*1000);
+ $('bcMin').value=P(BC.min);$('bcMax').value=P(BC.max);
+ if(document.activeElement!==$('bcMinN'))$('bcMinN').value=bcFmt(BC.min);if(document.activeElement!==$('bcMaxN'))$('bcMaxN').value=bcFmt(BC.max);
+ const c=(BC.min+BC.max)/2,w=BC.max-BC.min;$('bcBri').value=Math.round((1-(c-A0)/span)*1000);$('bcCon').value=Math.round(500+100*Math.log2(span/Math.max(w,1e-9)))}
+let bcRaf=0;function bcUpdate(){BC.custom=true;bcSync();if(!bcRaf)bcRaf=requestAnimationFrame(()=>{bcRaf=0;bcPaint()})}
+function bcSetRange(a,b){const R=BC.raw;if(!R)return;const [A0,A1]=bcAx(),eps=(A1-A0)/1000;if(b-a<eps){if(a!==BC.min)a=b-eps;else b=a+eps}BC.min=a;BC.max=b;bcUpdate()}
+function bcDefault(){const R=BC.raw;if(!R)return;[BC.min,BC.max]=R.dflt;BC.gam=1;BC.autoT=0;BC.custom=false}
+// a new image opened: keep the settings, or start from the standard display
+async function bcImage(){bcDraw();if(!cur)return;
+ if(!BC.keep){BC.custom=false;BC.gam=1;BC.autoT=0}
+ if(!bcActive())return;const id=cur.id;let R;try{R=await bcLoad(id)}catch(e){toast('Could not load the raw image for brightness & contrast.');return}
+ if(!cur||cur.id!==id)return;if(!BC.keep||BC.min==null){[BC.min,BC.max]=R.dflt}bcSync();bcPaint()}
+async function bcToggle(force){BC.open=force===undefined?!BC.open:force;$('bc').hidden=!BC.open;$('bBC').classList.toggle('on',BC.open);bcSet('kc.bc.open',BC.open?'1':'');
+ if(BC.open){bcPlace();if(cur&&!(BC.raw&&BC.raw.id===cur.id)){const keepNow=BC.custom;await bcImage();BC.custom=keepNow}else bcSync()}
+ else{bcSync();if(!bcActive())bcPlain()}}
+function bcPlace(){const st=$('stage').getBoundingClientRect(),p=$('bc'),pos=(bcGet('kc.bc.pos')||'').split(',').map(Number);
+ let x=pos.length===2&&isFinite(pos[0])?pos[0]:st.width-p.offsetWidth-12,y=pos.length===2&&isFinite(pos[1])?pos[1]:12;
+ x=Math.max(4,Math.min(st.width-p.offsetWidth-4,x));y=Math.max(4,Math.min(st.height-p.offsetHeight-4,y));p.style.left=x+'px';p.style.top=y+'px'}
+// controls
+$('bBC').onclick=()=>bcToggle();$('bcClose').onclick=()=>bcToggle(false);
+const bcV=p=>{const [A0,A1]=bcAx();return A0+p/1000*(A1-A0)};
+$('bcMin').oninput=e=>{if(BC.raw){const v=bcV(e.target.value);bcSetRange(v,Math.max(BC.max,v))}};
+$('bcMax').oninput=e=>{if(BC.raw){const v=bcV(e.target.value);bcSetRange(Math.min(BC.min,v),v)}};
+$('bcMinN').onchange=e=>{const v=parseFloat(e.target.value);if(isFinite(v))bcSetRange(v,Math.max(BC.max,v));else bcSync()};
+$('bcMaxN').onchange=e=>{const v=parseFloat(e.target.value);if(isFinite(v))bcSetRange(Math.min(BC.min,v),v);else bcSync()};
+$('bcBri').oninput=e=>{const R=BC.raw;if(!R)return;const w=BC.max-BC.min,c=bcV(1000-e.target.value);BC.min=c-w/2;BC.max=c+w/2;bcUpdate()};
+$('bcCon').oninput=e=>{const R=BC.raw;if(!R)return;const [A0,A1]=bcAx(),c=(BC.min+BC.max)/2,w=(A1-A0)*Math.pow(2,-(e.target.value-500)/100);BC.min=c-w/2;BC.max=c+w/2;bcUpdate()};
+$('bcGam').oninput=e=>{BC.gam=Math.pow(2,e.target.value/50);bcUpdate()};
+$('bcGam').ondblclick=()=>{BC.gam=1;bcUpdate()};
+$('bcLut').onchange=e=>{BC.lut=e.target.value;bcSet('kc.bc.lut',BC.lut);bcSync();if(BC.raw&&cur&&BC.raw.id===cur.id)bcPaint();else bcImage()};
+$('bcLog').onchange=e=>{BC.log=e.target.checked;bcSet('kc.bc.log',BC.log?'1':'0');bcDraw()};
+$('bcKeep').onchange=e=>{BC.keep=e.target.checked;bcSync()};
+$('bcReset').onclick=()=>{bcDefault();bcSync();bcPaint();bcSync()};
+// Auto, as in Fiji: each click saturates more pixels (0.02% .. ~5%), then back to the standard display
+$('bcAuto').onclick=()=>{const R=BC.raw;if(!R)return;BC.autoT=BC.autoT<10?5000:BC.autoT/2;if(BC.autoT<10){$('bcReset').click();return}
+ let n=0;for(const c of R.h)n+=c;const lim=n/10,thr=n/BC.autoT,bw=(R.hi-R.lo)/256;let i=0,j=255;
+ while(i<255&&!(R.h[i]>thr&&R.h[i]<=lim))i++;while(j>0&&!(R.h[j]>thr&&R.h[j]<=lim))j--;
+ if(j<=i){$('bcReset').click();return}BC.gam=1;const t=BC.autoT;bcSetRange(R.lo+i*bw,R.lo+(j+1)*bw);BC.autoT=t};
+// drag the lines on the histogram (between them: move both)
+(function(){const c=$('bcHist');let drag=null;
+ const ax=()=>drag&&drag.ax||bcAx();
+ const val=e=>{const [A0,A1]=ax(),r=c.getBoundingClientRect();return A0+Math.max(0,Math.min(1,(e.clientX-r.left)/r.width))*(A1-A0)};
+ c.addEventListener('pointerdown',e=>{const R=BC.raw;if(!R)return;const r=c.getBoundingClientRect(),[A0,A1]=ax(),X=v=>(v-A0)/(A1-A0)*r.width+r.left;
+  const dm=Math.abs(e.clientX-X(BC.min)),dM=Math.abs(e.clientX-X(BC.max));
+  const k=dm<8||dM<8?(dm<=dM?'min':'max'):(e.clientX>X(BC.min)&&e.clientX<X(BC.max)?'both':(e.clientX<X(BC.min)?'min':'max'));
+  drag={k,ax:bcAx()};drag.v=val(e);drag.a=BC.min;drag.b=BC.max;
+  c.setPointerCapture(e.pointerId);c.dispatchEvent(new PointerEvent('pointermove',e))});
+ c.addEventListener('pointermove',e=>{const R=BC.raw;if(!R)return;const r=c.getBoundingClientRect(),[A0,A1]=ax(),X=v=>(v-A0)/(A1-A0)*r.width+r.left;
+  if(!drag){c.style.cursor=Math.min(Math.abs(e.clientX-X(BC.min)),Math.abs(e.clientX-X(BC.max)))<8?'ew-resize':(e.clientX>X(BC.min)&&e.clientX<X(BC.max)?'grab':'pointer');return}
+  const v=val(e);if(drag.k==='min')bcSetRange(Math.min(v,BC.max),BC.max);else if(drag.k==='max')bcSetRange(BC.min,Math.max(v,BC.min));
+  else{const dv=v-drag.v;BC.min=drag.a+dv;BC.max=drag.b+dv;bcUpdate()}});
+ ['pointerup','pointercancel'].forEach(k=>c.addEventListener(k,()=>{drag=null}))})();
+// move the panel by its title bar; position remembered on this computer
+(function(){const h=$('bcHead'),p=$('bc');h.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;e.preventDefault();h.setPointerCapture(e.pointerId);
+ const x0=e.clientX-p.offsetLeft,y0=e.clientY-p.offsetTop;
+ const mv=ev=>{p.style.left=(ev.clientX-x0)+'px';p.style.top=(ev.clientY-y0)+'px'};
+ const up=()=>{h.removeEventListener('pointermove',mv);h.removeEventListener('pointerup',up);bcSet('kc.bc.pos',`${p.offsetLeft},${p.offsetTop}`);bcPlace()};
+ h.addEventListener('pointermove',mv);h.addEventListener('pointerup',up)});
+ h.addEventListener('dblclick',()=>{bcSet('kc.bc.pos','');bcPlace()})})();
+window.addEventListener('resize',()=>{if(BC.open)bcPlace()});
+// after using a slider, list or number field, give the keys back to the review (arrows = next/previous image)
+document.addEventListener('change',e=>{if(e.target.matches('input[type=range],input[type=number],input[type=checkbox],#bcLut'))e.target.blur()});
+BC.lut=bcGet('kc.bc.lut')||'gray';$('bcLut').value=BC.lut;BC.log=bcGet('kc.bc.log')!=='0';$('bcLog').checked=BC.log;
+if(bcGet('kc.bc.open')==='1'){BC.open=true;$('bc').hidden=false;$('bBC').classList.add('on');requestAnimationFrame(bcPlace)}
 setCursor();
 setInterval(()=>api('/api/ping',{}),20000);
 (async()=>{const i=await fetch('/api/run-info',{headers:{'X-Token':T}}).then(r=>r.json());
