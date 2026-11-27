@@ -394,7 +394,8 @@ document.addEventListener('keyup',e=>{if(e.key===' '){space=false;setCursor()}if
  const lw=get('kc.lw'),rw=get('kc.rw');if(lw)root.style.setProperty('--lw',lw+'px');if(rw)root.style.setProperty('--rw',rw+'px');
  function drag(el,varName,key,sign,min,max){el.addEventListener('pointerdown',e=>{e.preventDefault();el.setPointerCapture(e.pointerId);el.classList.add('on');
   const x0=e.clientX,w0=parseFloat(getComputedStyle(root).getPropertyValue(varName))||(sign>0?240:300);
-  const mv=ev=>{const w=Math.max(min,Math.min(max,w0+sign*(ev.clientX-x0)));root.style.setProperty(varName,w+'px');render()};
+  const ui=parseFloat(getComputedStyle(root).getPropertyValue('--ui'))||1;
+  const mv=ev=>{const w=Math.max(min,Math.min(max,w0+sign*(ev.clientX-x0)/ui));root.style.setProperty(varName,w+'px');render()};
   const up=ev=>{el.removeEventListener('pointermove',mv);el.removeEventListener('pointerup',up);el.classList.remove('on');
    set(key,parseFloat(getComputedStyle(root).getPropertyValue(varName)))};
   el.addEventListener('pointermove',mv);el.addEventListener('pointerup',up)});
