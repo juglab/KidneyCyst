@@ -5,6 +5,7 @@
  <h1>KidneyCyst</h1><p>Pronephros segmentation and area measurement in GFP images of zebrafish larvae.</p></div>
  <div class="toplinks"><a class="helplink" href="#" id="help"><span class="ic" style="--i:url(/static/icons/help.svg)"></span>Help</a></div></div>
 
+<div class="banner upd" id="upd" hidden><span id="updTxt"></span><span class="row" id="updBtns"><button class="quiet small" id="updNotes">What's new</button><button class="primary small" id="updGo">Update now</button></span></div>
 <div class="banner" id="busy" hidden><span id="busyTxt"></span><button class="primary small" id="busyGo">View</button></div>
 
 <section class="panel newpanel">
@@ -99,6 +100,23 @@ $('scan').onclick=async()=>{const b=withPath({action:'scan'});if(!b)return;const
 $('q').oninput=draw;
 $('help').onclick=e=>{e.preventDefault();location.href='/help?t='+T};
 setInterval(()=>api('/api/ping',{}),20000);
-load().then(busy);
+// ---------- program updates (GitHub releases; see updater.py)
+let UPD=null;
+async function updCheck(){let u;try{u=await api('/api/update',{})}catch(e){return}UPD=u;if(!u.available||!u.managed)return;
+ $('upd').hidden=false;$('updBtns').hidden=false;
+ if(u.needs_download){$('updTxt').innerHTML=`<b>KidneyCyst ${esc(u.latest)}</b> is available. It needs a new download of the installation; ask for the new installation file. You have ${esc(u.current)}.`;$('updGo').hidden=true;return}
+ $('updTxt').innerHTML=`<b>KidneyCyst ${esc(u.latest)}</b> is available. You have ${esc(u.current)}. Updating takes about a minute; your runs and reviews are kept.`}
+$('updNotes').onclick=()=>modal(`What's new in KidneyCyst ${UPD.latest}`,`<div class="notes">${esc(UPD.notes||'No notes for this version.').replace(/\n/g,'<br>')}</div>`,[['Close',0,'primary']]);
+$('updGo').onclick=async()=>{const v=await modal(`Update to KidneyCyst ${UPD.latest}?`,'KidneyCyst downloads the new version, checks it, and restarts. This page reloads by itself. If the new version does not work, the current one is put back.',[['Cancel',0],['Update now',1,'primary']]);
+ if(!v)return;const r=await api('/api/update',{start:true});if(r.error){$('updTxt').textContent=r.error;return}
+ $('updBtns').hidden=true;$('upd').classList.remove('warn');
+ const poll=async()=>{let s;try{s=await api('/api/update',{status:true})}catch(e){return waitBack()}
+  $('updTxt').textContent=s.error||s.step;if(s.error){$('upd').classList.add('warn');return}
+  if(s.done&&s.ok)return waitBack(s.version);setTimeout(poll,800)};
+ const waitBack=async want=>{$('updTxt').textContent=`KidneyCyst ${want||''} installed. Restarting…`;
+  for(let i=0;i<120;i++){await new Promise(r=>setTimeout(r,1000));try{const a=await api('/api/about');if(!want||a.version===want){location.reload();return}}catch(e){}}
+  $('updTxt').textContent='KidneyCyst did not come back. Close this tab and start KidneyCyst again.'};
+ poll()};
+load().then(busy);updCheck();
 window.addEventListener('focus',()=>load().then(busy));
 </script></body></html>

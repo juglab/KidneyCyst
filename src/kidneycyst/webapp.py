@@ -703,6 +703,17 @@ class H(BaseHTTPRequestHandler):
                     RG.save_settings(host=b.get("host", ""), command=r["command"], info=r["info"], slurm=r["slurm"],
                                      partitions=r["partitions"])
                 return self._json(r)
+            if p == "/api/update":                  # program update from GitHub releases (see updater.py)
+                from . import updater as UP
+                if b.get("start"):
+                    return self._json(UP.start(JOB.running))
+                if b.get("status"):
+                    st = dict(UP.STATE)
+                    if st["done"] and st["ok"] and not SERVER.get("restarting"):
+                        SERVER["restarting"] = True
+                        UP.restart(SERVER["port"], TOKEN, SERVER["srv"].server_close, _save_session)
+                    return self._json(st)
+                return self._json(UP.check(force=bool(b.get("force"))))
             if p == "/api/gpu-install":
                 from . import remote_gpu as RG
                 if b.get("start"):
@@ -895,6 +906,14 @@ def _remember():
             pass
 
 
+def _save_session():
+    """Before an update restart: the restarted app reopens the same folder and run."""
+    _session_file().write_text(json.dumps(dict(folder=STATE["folder"], out=STATE["out"])), encoding="utf-8")
+
+
+SERVER = {}
+
+
 def _restore():
     try:
         d = json.loads(_session_file().read_text(encoding="utf-8"))
@@ -927,7 +946,15 @@ def main():
             pass
     port = int(os.environ.get("KIDNEYCYST_PORT") or _free_port())
     host = os.environ.get("KIDNEYCYST_HOST", "127.0.0.1")   # 0.0.0.0 only for remote test sessions (token still required)
-    srv = ThreadingHTTPServer((host, port), H)
+    for i in range(40):                     # after an update the old app may need a moment to free the port
+        try:
+            srv = ThreadingHTTPServer((host, port), H)
+            break
+        except OSError:
+            if not os.environ.get("KIDNEYCYST_RESTARTED") or i == 39:
+                raise
+            time.sleep(0.25)
+    SERVER.update(srv=srv, port=port)
     shown = socket.gethostbyname(socket.gethostname()) if host == "0.0.0.0" else host
     url = f"http://{shown}:{port}/?t={TOKEN}"
     print(f"KidneyCyst is available at {url}\n" + (f"The server stops {IDLE_EXIT_S // 60} minutes after the last application tab is closed."

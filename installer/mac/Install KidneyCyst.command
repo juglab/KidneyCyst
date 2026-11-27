@@ -18,7 +18,7 @@ step 1 "Creating a local Python environment…"
 step 2 "Downloading and installing PyTorch…"
 "$UV" pip install --python "$PY" --compile-bytecode 'torch!=2.9.*' || fail; ok "PyTorch ready"
 step 3 "Installing KidneyCyst and dependencies…"
-"$UV" pip install --python "$PY" --compile-bytecode -r "$F/app/requirements.txt" "$F/app/kidneycyst-0.1.0-py3-none-any.whl" || fail
+"$UV" pip install --python "$PY" --compile-bytecode -r "$F/app/requirements.txt" "$F"/app/kidneycyst-*.whl || fail
 ok "KidneyCyst installed"
 step 4 "Running a sample-image test…"
 KIDNEYCYST_HOME="$F" "$PY" -m kidneycyst.setup_local || fail

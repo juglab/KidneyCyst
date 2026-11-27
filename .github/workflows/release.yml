@@ -1,0 +1,44 @@
+# Pushing a tag vX.Y.Z publishes a GitHub release that the installed apps offer as an update.
+# The tag must equal __version__ in src/kidneycyst/__init__.py; the notes come from that version's section in CHANGELOG.md.
+name: release
+on:
+  push:
+    tags: ["v*.*.*"]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Build the wheel
+        run: uv build --wheel --out-dir dist
+      - name: Check it
+        run: |
+          uv venv --python 3.12 .venv
+          uv pip install --python .venv dist/*.whl
+          .venv/bin/python -I scripts/ci_checks.py dist/*.whl
+      - name: Tag, version and notes must agree; write version.json
+        run: |
+          .venv/bin/python -I - <<'PY'
+          import json, os, re, sys, pathlib
+          import kidneycyst, kidneycyst.updater as U
+          tag = os.environ["GITHUB_REF_NAME"].lstrip("v")
+          v = kidneycyst.__version__
+          if tag != v:
+              sys.exit(f"Tag v{tag} does not match __version__ {v} in src/kidneycyst/__init__.py")
+          log = pathlib.Path("CHANGELOG.md").read_text(encoding="utf-8")
+          m = re.search(rf"^## {re.escape(v)}\b.*?\n(.*?)(?=^## |\Z)", log, re.S | re.M)
+          if not m or not m.group(1).strip():
+              sys.exit(f"CHANGELOG.md has no section '## {v}'")
+          notes = m.group(1).strip()
+          pathlib.Path("notes.md").write_text(notes, encoding="utf-8")
+          json.dump(dict(version=v, wheel=f"kidneycyst-{v}-py3-none-any.whl", base=U.BASE, notes=notes),
+                    open("dist/version.json", "w"), indent=1)
+          print(open("dist/version.json").read())
+          PY
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.whl dist/version.json --title "KidneyCyst ${GITHUB_REF_NAME#v}" --notes-file notes.md

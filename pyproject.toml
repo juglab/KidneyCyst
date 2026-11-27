@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kidneycyst"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Zebrafish pronephros (kidney) outlines from GFP TIFFs: nnU-Net prediction, QC report, QuPath review loop"
 requires-python = ">=3.10"
 dependencies = ["numpy", "pandas", "tifffile", "scikit-image", "scipy", "shapely>=2", "openpyxl", "pillow"]
@@ -18,6 +18,9 @@ kidneycyst = "kidneycyst.cli:main"
 
 [project.gui-scripts]
 kidneycyst-gui = "kidneycyst.gui:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "kidneycyst.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]

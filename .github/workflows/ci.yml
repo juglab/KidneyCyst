@@ -1,0 +1,25 @@
+# Every push and pull request: build the wheel and run the fast checks (no model, no GPU) on all three systems.
+name: checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  checks:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Build the wheel
+        run: uv build --wheel --out-dir dist
+      - name: Install it in a fresh environment and run the checks
+        shell: bash
+        run: |
+          uv venv --python 3.12 .venv
+          uv pip install --python .venv dist/*.whl
+          if [ -x .venv/Scripts/python.exe ]; then PY=.venv/Scripts/python.exe; else PY=.venv/bin/python; fi
+          "$PY" -I scripts/ci_checks.py dist/*.whl

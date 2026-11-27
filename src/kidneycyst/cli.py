@@ -32,7 +32,7 @@ from . import metrics as M
 from . import qupath_io as Q
 
 os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
-TOOL_VERSION = "0.1.0"
+from . import __version__ as TOOL_VERSION
 SERVER_CHECKPOINT = ("/group/jug/aman/ZebrafishKidneyCyst_Runs/nnunet/results_18gb/Dataset501_KidneyCystGFP/"
                      "nnUNetTrainer_250epochs__nnUNetPlans_p512__2d")   # KC009 (25 Nov); KC007 was ..._100epochs_...
 

@@ -27,3 +27,4 @@ notebooks/figs/
 /scripts/*
 !/scripts/test_beta_measures.py
 !/scripts/ui_flow_test.py
+!/scripts/ci_checks.py

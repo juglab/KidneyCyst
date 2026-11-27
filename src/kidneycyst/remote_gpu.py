@@ -236,6 +236,15 @@ def probe(host: str, command: str = "") -> dict:
         res["command"], res["info"] = m_cmd.group(1).strip(), info
         remember_command(host, res["command"])
         res["steps"].append(dict(ok=True, text=f"KidneyCyst {info.get('tool_version', '?')} found."))
+        from . import __version__ as here
+        there = str(info.get("tool_version", ""))
+        if there and there != here:
+            ours = REMOTE_HOME.lstrip("~/") in res["command"]
+            res["can_install"] = ours                   # our own copy there: "Install KidneyCyst there" updates it
+            res["steps"].append(dict(ok=True, warn=True, text=(
+                f"{host} has KidneyCyst {there}; this computer has {here}. "
+                + ("Click Install KidneyCyst there to bring it to the same version." if ours else
+                   "Update it there so both computers measure the same way."))))
         model = model_label(str(info.get("model_source", info.get("checkpoint", ""))))
         res["steps"].append(dict(ok=True, text=f"Model: {model}."))
         local = _local_model()

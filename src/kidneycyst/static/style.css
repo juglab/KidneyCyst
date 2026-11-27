@@ -382,3 +382,8 @@ table.runs td.empty{padding:34px 20px;line-height:1.6}
 .bc-b button:hover:not(:disabled){background:#2C4360;border-color:#8CCAFF}
 .bc-n{margin:8px 0 0;color:#8FA3B8;line-height:1.35}
 .bctag{color:#FFB36B;margin-left:4px}
+
+/* ---------- update available (start page) ---------- */
+.banner.upd{background:#EEF6FF;border-color:#B9D6F2}
+.banner.upd .row{gap:6px}
+.modal .notes{max-height:300px;overflow:auto;white-space:normal;font-size:14px}

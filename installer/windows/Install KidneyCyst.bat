@@ -17,7 +17,8 @@ call :step "Step 1 of 4: Creating a local Python environment..."
 call :step "Step 2 of 4: Downloading and installing PyTorch..."
 "%UV%" pip install --python "%PY%" --compile-bytecode "torch!=2.9.*" --torch-backend=auto || goto :fail
 call :step "Step 3 of 4: Installing KidneyCyst and dependencies..."
-"%UV%" pip install --python "%PY%" --compile-bytecode -r "%F%app\requirements.txt" "%F%app\kidneycyst-0.1.0-py3-none-any.whl" || goto :fail
+for %%W in ("%F%app\kidneycyst-*.whl") do set "WHL=%%~fW"
+"%UV%" pip install --python "%PY%" --compile-bytecode -r "%F%app\requirements.txt" "%WHL%" || goto :fail
 call :step "Step 4 of 4: Running a sample-image test..."
 set "KIDNEYCYST_HOME=%F%"
 "%PY%" -m kidneycyst.setup_local || goto :fail
